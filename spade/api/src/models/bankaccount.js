@@ -1,43 +1,71 @@
-"use strict";
-import { Model } from "sequelize";
-export default (sequelize, DataTypes) => {
-  class BankAccount extends Model {
-    /**
-     * Helper method for defining associations.
-     * This method is not a part of Sequelize lifecycle.
-     * The `models/index` file will call this method automatically.
-     */
-    static associate(models) {
-      // define association here
-      // BankAccount belongs to User
-      BankAccount.belongsTo(models.User, {
-        foreignKey: "user_id",
-        as: "user",
-      });
+import mongoose from "mongoose";
 
-      BankAccount.hasMany(models.WithdrawAccounts);
-      BankAccount.hasMany(models.Deposit);
-    }
-  }
-  BankAccount.init(
-    {
-      user_id: DataTypes.INTEGER,
-      type: DataTypes.STRING, // savings, current, upi etc
-      method: DataTypes.STRING, // imps, neft, upi etc
-      ifsc: DataTypes.STRING,
-      name: DataTypes.STRING, // name of the bank
-      account: DataTypes.STRING, // account number
-      account_name: DataTypes.STRING, // name of the account holder
-      min_amount: DataTypes.INTEGER, // minimum amount that this account accepts
-      max_amount: DataTypes.INTEGER, // maximum amount that this account accepts
-      image: { type: DataTypes.TEXT, defaultValue: null }, // base64 img. used for upi qr code
-      is_deleted: { type: DataTypes.BOOLEAN, defaultValue: false }, // Soft deleting bank accounts for record keeping. Admins can see deleted accounts too. We'll not be allowing anyone to edit the bank account after adding it as it will be used for transactions, deposits & withdrawals. Deleting will create a mess.
-      for_admin: { type: DataTypes.BOOLEAN, defaultValue: false }, // if true, this account is for admin use only, like showing it on user deposit page for sending money to admin. for_admin accounts will be used for deposit, so they are shown to users too
+const bankAccountSchema = new mongoose.Schema(
+  {
+    user_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
     },
-    {
-      sequelize,
-      modelName: "BankAccount",
-    }
-  );
-  return BankAccount;
-};
+    type: {
+      type: String, 
+      required: true,
+    },
+    method: {
+      type: String, 
+      required: true,
+    },
+    ifsc: {
+      type: String,
+    },
+    name: {
+      type: String, 
+    },
+    account: {
+      type: String, 
+    },
+    account_name: {
+      type: String, 
+    },
+    min_amount: {
+      type: Number, 
+    },
+    max_amount: {
+      type: Number, // maximum amount that this account accepts
+    },
+    image: {
+      type: String, // base64 image (e.g., for UPI QR code)
+      default: null,
+    },
+    is_deleted: {
+      type: Boolean,
+      default: false,
+    },
+    for_admin: {
+      type: Boolean,
+      default: false,
+    },
+  },
+  {
+    timestamps: true, 
+  }
+);
+
+bankAccountSchema.virtual("withdrawAccounts", {
+  ref: "WithdrawAccount",
+  localField: "_id",
+  foreignField: "bank_account_id",
+});
+
+bankAccountSchema.virtual("deposits", {
+  ref: "Deposit",
+  localField: "_id",
+  foreignField: "bank_account_id",
+});
+
+bankAccountSchema.set("toObject", { virtuals: true });
+bankAccountSchema.set("toJSON", { virtuals: true });
+
+const BankAccount = mongoose.model("BankAccount", bankAccountSchema);
+
+export default BankAccount;

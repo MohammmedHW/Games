@@ -1,40 +1,31 @@
-"use strict";
-import { Model } from "sequelize";
+import mongoose from "mongoose";
 
-export default (sequelize, DataTypes) => {
-  class GamingSession extends Model {
-    /**
-     * Helper method for defining associations.
-     * This method is not a part of Sequelize lifecycle.
-     * The `models/index` file will call this method automatically.
-     */
-    static associate(models) {
-      // define association here
-      GamingSession.belongsTo(models.User, {
-        foreignKey: "user_id",
-        as: "user",
-      });
-      GamingSession.belongsTo(models.GameProvider, {
-        foreignKey: "provider_id",
-        as: "provider",
-      });
-    }
-  }
-  GamingSession.init(
-    {
-      user_id: DataTypes.INTEGER,
-      provider_id: DataTypes.INTEGER,
-      session_id: DataTypes.STRING,
-      launch_url: DataTypes.STRING,
-      timestamp: {
-        type: "TIMESTAMP",
-        defaultValue: sequelize.literal("CURRENT_TIMESTAMP"),
-      },
+const gamingSessionSchema = new mongoose.Schema(
+  {
+    user_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
     },
-    {
-      sequelize,
-      modelName: "GamingSession",
-    }
-  );
-  return GamingSession;
-};
+    provider_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "GameProvider",
+      required: true,
+    },
+    session_id: {
+      type: String,
+      required: true,
+    },
+    launch_url: {
+      type: String,
+      required: true,
+    },
+    timestamp: {
+      type: Date,
+      default: Date.now,
+    },
+  },
+  {
+    timestamps: true, // includes createdAt and updatedAt
+  }
+);
