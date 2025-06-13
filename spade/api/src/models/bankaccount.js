@@ -2,70 +2,59 @@ import mongoose from "mongoose";
 
 const bankAccountSchema = new mongoose.Schema(
   {
-    user_id: {
+    user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
     type: {
-      type: String, 
+      type: String,
+      enum: ["savings", "current", "upi", "wallet", "other"],
       required: true,
     },
     method: {
-      type: String, 
+      type: String,
+      enum: ["bank_transfer", "upi", "paytm", "phonepe", "crypto"],
       required: true,
     },
-    ifsc: {
-      type: String,
-    },
-    name: {
-      type: String, 
-    },
-    account: {
-      type: String, 
-    },
-    account_name: {
-      type: String, 
-    },
-    min_amount: {
-      type: Number, 
-    },
-    max_amount: {
-      type: Number, // maximum amount that this account accepts
-    },
-    image: {
-      type: String, // base64 image (e.g., for UPI QR code)
-      default: null,
-    },
-    is_deleted: {
-      type: Boolean,
-      default: false,
-    },
-    for_admin: {
-      type: Boolean,
-      default: false,
-    },
+    ifsc: String,
+    name: String,
+    account: String,
+    account_name: String,
+    min_amount: { type: Number, default: 0 },
+    max_amount: Number,
+    image: String,
+    is_verified: { type: Boolean, default: false },
+    is_deleted: { type: Boolean, default: false },
+    for_admin: { type: Boolean, default: false },
+    verification_documents: [
+      {
+        doc_type: String,
+        url: String,
+        verified: Boolean,
+      },
+    ],
   },
   {
-    timestamps: true, 
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
   }
 );
 
-bankAccountSchema.virtual("withdrawAccounts", {
-  ref: "WithdrawAccount",
+// Virtual for withdrawals
+bankAccountSchema.virtual("withdrawals", {
+  ref: "Withdrawal",
   localField: "_id",
-  foreignField: "bank_account_id",
+  foreignField: "account",
 });
 
+// Virtual for deposits
 bankAccountSchema.virtual("deposits", {
   ref: "Deposit",
   localField: "_id",
-  foreignField: "bank_account_id",
+  foreignField: "bank_account",
 });
 
-bankAccountSchema.set("toObject", { virtuals: true });
-bankAccountSchema.set("toJSON", { virtuals: true });
-
 const BankAccount = mongoose.model("BankAccount", bankAccountSchema);
-
 export default BankAccount;

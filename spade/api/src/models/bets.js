@@ -1,121 +1,123 @@
 import mongoose from "mongoose";
-const { Schema } = mongoose;
-import User from "./User.js"; // ✅ Make sure User model is imported correctly
+import User from "./User.js";
 
-const betSchema = new Schema({
-  user_id: { type: Schema.Types.ObjectId, ref: "User" },
-  category: {
-    type: String,
-    enum: ["sports", "sports_fancy", "wacs", "fawk"],
+const betSchema = new mongoose.Schema(
+  {
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    category: {
+      type: String,
+      enum: ["sports", "sports_fancy", "wacs", "fawk"],
+      required: true,
+    },
+    status: {
+      type: String,
+      enum: ["OPEN", "VOID", "WON", "LOST", "SETTLED", "CANCELLED"],
+      default: "OPEN",
+    },
+    pnl: { type: Number, default: 0 },
+    bet_type: {
+      type: String,
+      enum: ["back", "lay"],
+      required: true,
+    },
+    user_balance: { type: Number, default: 0 },
+    user_balance_after: { type: Number, default: 0 },
+    bonus_used: { type: Number, default: 0 },
+    stake: { type: Number, required: true },
+    liability: { type: Number, required: true },
+    event_id: { type: String, required: true },
+    sport_id: { type: String, required: true },
+    bookmaker: String,
+    region: String,
+    market: mongoose.Schema.Types.Mixed,
+    commence_time: { type: Date, required: true },
+    selectedTeam: String,
+    selectedOdd: String,
+    settlement_id: Number,
+    is_deleted: { type: Boolean, default: false },
+    homeTeam: String,
+    awayTeam: String,
+    matchName: String,
+    gameId: String,
+    marketId: String,
+    marketType: String,
+    remoteUpdate: { type: Boolean, default: false },
+    runnerName: String,
+    requestedOdds: String,
+    gameType: String,
+    gameSubType: String,
+    roundId: String,
+    orderId: String,
+    betExposure: Number,
+    exposureTime: Date,
   },
-  status: {
-    type: String,
-    enum: ["OPEN", "VOID", "WON", "LOST"],
-    default: "OPEN",
-  },
-  pnl: Number,
-  bet_type: { type: String, enum: ["back", "lay"] },
-  user_balance: { type: Number, default: 0 },
-  user_balance_after: { type: Number, default: 0 },
-  bonus_used: { type: Number, default: 0 },
-  stake: Number,
-  liability: Number,
-  event_id: String,
-  sport_id: String,
-  bookmaker: String,
-  region: String,
-  market: Schema.Types.Mixed,
-  commence_time: Date,
-  selectedTeam: String,
-  selectedOdd: String,
-  settlement_id: Number,
-  is_deleted: { type: Boolean, default: false },
-  homeTeam: String,
-  awayTeam: String,
-  matchName: String,
-  gameId: String,
-  marketId: String,
-  marketType: String,
-  remoteUpdate: { type: Boolean, default: false },
-  runnerName: String,
-  requestedOdds: String,
-  gameType: String,
-  gameSubType: String,
-  roundId: String,
-  orderId: String,
-  betExposure: Number,
-  exposureTime: { type: Date, default: null },
-}, { timestamps: true });
+  { timestamps: true }
+);
 
-/** ✅ Add the middleware code here */
+// Pre-save hook for new bets
 betSchema.pre("save", async function (next) {
   if (this.isNew && this.status === "OPEN") {
-    const user = await User.findById(this.user_id);
+    const user = await User.findById(this.user);
     const isSportsBet = ["sports", "sports_fancy"].includes(this.category);
 
-    this.user_balance = parseInt(user.credit);
+    this.user_balance = user.credit;
 
     if (isSportsBet) {
-      if (this.stake >= 0) {
-        this.user_balance_after = parseInt(user.credit) - Math.abs(parseInt(this.liability));
-      }
+      this.user_balance_after = user.credit - Math.abs(this.liability);
     } else {
-      if (this.stake >= 0) {
-        this.user_balance_after = parseInt(user.credit) - Math.abs(parseInt(this.stake));
-      }
+      this.user_balance_after = user.credit - Math.abs(this.stake);
     }
 
-    user.wagering = parseInt(user.wagering) + parseInt(this.stake || 0);
+    user.wagering += this.stake || 0;
     await user.save();
   }
   next();
 });
 
+// Pre-update hook for bet settlement
 betSchema.pre("findOneAndUpdate", async function (next) {
   const update = this.getUpdate();
   const bet = await this.model.findOne(this.getQuery());
 
-  const user = await User.findById(bet.user_id);
-  const isSportsBet = ["sports", "sports_fancy"].includes(bet.category);
+  if (update.status && ["VOID", "WON", "LOST"].includes(update.status)) {
+    const user = await User.findById(bet.user);
+    const isSportsBet = ["sports", "sports_fancy"].includes(bet.category);
 
-  let user_balance = 0;
+    let balanceAdjustment = 0;
 
-  if (isSportsBet) {
-    user_balance = parseInt(user.credit) + parseInt(bet.liability);
-    update.user_balance = user_balance;
-
-    switch (update.status) {
-      case "VOID":
-        update.user_balance_after = user_balance;
-        break;
-      case "LOST":
-        update.user_balance_after = user_balance - Math.abs(parseInt(bet.liability));
-        break;
-      case "WON":
-        update.user_balance_after = user_balance + Math.abs(parseInt(update.pnl));
-        break;
+    if (isSportsBet) {
+      if (update.status === "VOID") {
+        balanceAdjustment = bet.liability;
+      } else if (update.status === "WON") {
+        balanceAdjustment = bet.liability + (update.pnl || 0);
+      }
+    } else {
+      if (update.status === "VOID") {
+        balanceAdjustment = bet.stake;
+      } else if (update.status === "WON") {
+        balanceAdjustment = bet.stake + (update.pnl || 0);
+      }
     }
-  } else {
-    user_balance = parseInt(user.credit) + parseInt(bet.stake);
-    update.user_balance = user_balance;
 
-    switch (update.status) {
-      case "VOID":
-        update.user_balance_after = user_balance;
-        break;
-      case "LOST":
-        update.user_balance_after = user_balance - Math.abs(parseInt(update.pnl));
-        break;
-      case "WON":
-        update.user_balance_after = user_balance + Math.abs(parseInt(update.pnl));
-        break;
-    }
+    user.credit += balanceAdjustment;
+    await user.save();
+
+    // Create transaction record
+    await mongoose.model("Transaction").create({
+      user: bet.user,
+      type: "credit",
+      amount: balanceAdjustment,
+      category: "bet_settlement",
+      reference: `bet_${bet._id}`,
+      status: "success",
+    });
   }
-
-  this.setUpdate(update);
   next();
 });
 
-/** ✅ Export the model */
 const Bet = mongoose.model("Bet", betSchema);
 export default Bet;

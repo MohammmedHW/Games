@@ -4,26 +4,29 @@ const gameSchema = new mongoose.Schema(
   {
     api: {
       type: String,
-    }, // wacs, wco, fawk
+      enum: ["wacs", "wco", "fawk", "custom"],
+      required: true,
+    },
     provider: {
       type: String,
+      required: true,
     },
     code: {
       type: String,
-    }, // game code or provider game ID
+      required: true,
+      unique: true,
+    },
     name: {
       type: String,
+      required: true,
     },
     category: {
       type: String,
+      enum: ["sports", "casino", "live_casino", "poker", "lottery", "virtual"],
+      required: true,
     },
-    tags: {
-      type: [String],
-      default: [],
-    }, // array of tags
-    image: {
-      type: String,
-    }, // image URL (e.g., /img/img_name.jpg)
+    tags: [String],
+    image: String,
     enabled: {
       type: Boolean,
       default: true,
@@ -48,8 +51,25 @@ const gameSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    min_bet: Number,
+    max_bet: Number,
+    volatility: {
+      type: String,
+      enum: ["low", "medium", "high"],
+    },
+    rtp: Number,
+    supported_devices: {
+      type: [String],
+      enum: ["desktop", "mobile", "tablet"],
+      default: ["desktop", "mobile"],
+    },
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
+
+// Indexes for faster queries
+gameSchema.index({ category: 1, enabled: 1 });
+gameSchema.index({ is_popular: 1, is_featured: 1, is_new: 1 });
+
+const Game = mongoose.model("Game", gameSchema);
+export default Game;

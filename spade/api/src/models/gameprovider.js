@@ -4,22 +4,37 @@ const gameProviderSchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      default: "",
-    }, 
+      required: true,
+    },
     key: {
       type: String,
       required: true,
-    }, 
-    ip: {
+      unique: true,
+    },
+    api_key: String,
+    secret: String,
+    base_url: String,
+    ip_whitelist: [String],
+    lastAccess: Date,
+    status: {
       type: String,
-      default: null,
-    }, 
-    lastAccess: {
-      type: Date,
-      default: null,
-    }, 
+      enum: ["active", "inactive", "maintenance"],
+      default: "active",
+    },
+    supported_games: [
+      {
+        type: String,
+        enum: ["sports", "casino", "live_casino", "poker", "lottery"],
+      },
+    ],
+    config: mongoose.Schema.Types.Mixed,
+    is_deleted: {
+      type: Boolean,
+      default: false,
+    },
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
+
+const GameProvider = mongoose.model("GameProvider", gameProviderSchema);
+export default GameProvider;
