@@ -3,7 +3,7 @@ import { BsInstagram, BsTelegram, BsWhatsapp } from "react-icons/bs";
 import Image from "next/image"
 // import Logo from "../public/spade.png"
 import Logo from "./Logo"
-
+console.log("Footer check");
 const Footer = () => {
     return (
         <>
