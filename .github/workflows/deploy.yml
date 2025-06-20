@@ -1,0 +1,32 @@
+# github action to deploy on node server via ssh when a push is made to main branch
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Deploy
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.LINODE_HOST }}
+          username: ${{ secrets.LINODE_USER }}
+          key: ${{ secrets.LINODE_KEY }}
+          port: ${{ secrets.LINODE_PORT }}
+          script: |
+            cd /var/www/spade/
+            git reset --hard
+            git pull
+            npm install
+            npm update
+            rm -rf admin/.next/cache/
+            rm -rf frontend/.next/cache/
+            rm -rf landing-register-01/.next/cache/
+            rm -rf landing-register-02/.next/cache/
+            npm run build
+            pm2 restart ecosystem.config.js --update-env
