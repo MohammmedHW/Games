@@ -103,8 +103,111 @@
 
 //   return <UserStore.Provider value={value}>{children}</UserStore.Provider>;
 // }
+
+
+
+
+
+// // ///////////////////////////
+// import axios from "axios";
+// import { deleteCookie } from "cookies-next";
+// import { useRouter } from "next/router";
+// import { createContext, ReactElement, useEffect, useState } from "react";
+// import { User } from "../pages/users";
+
+// type Store = {
+//   isLoggedIn: boolean;
+//   token?: string;
+//   user?: User;
+//   logout: () => void;
+//   login: (value: Login) => void;
+// };
+
+// type Login = Omit<Store, "logout" | "login" | "isLoggedIn" | "user">;
+
+// export const UserStore = createContext<Store>({
+//   isLoggedIn: false,
+//   token: "",
+//   logout: () => {},
+//   login: () => {},
+// });
+
+// export default function UserStoreProvider({
+//   children,
+// }: {
+//   children: ReactElement;
+// }) {
+//   const [token, setToken] = useState<string>();
+//   const [user, setUser] = useState<User>();
+//   const router = useRouter();
+
+//   async function fetchProfile() {
+//     console.log("Calling fetchProfile — Current token:", token);
+//     if (!token) {
+//       console.log("fetchProfile skipped — token is undefined");
+//       return;
+//     }
+
+//     try {
+//       const res = await axios.get("/api/team/profile/", {
+//         headers: {
+//           "x-access-token": token,
+//         },
+//       });
+// //       const res = await axios.get("/api/team/profile/", {
+// //   headers: {
+// //     Authorization: `Bearer ${token}`,
+// //   },
+// // });
+//       setUser(res.data);
+//     } catch (err: any) {
+//       console.log("⚠️ Error in fetchProfile:", err.response);
+//       if (err.response?.status === 401 || err.response?.status === 400) logout();
+//     }
+//   }
+
+//   const logout = () => {
+//     setToken(undefined);
+//     deleteCookie("token");
+//     localStorage.removeItem("token");
+//     localStorage.removeItem("user");
+//     router.push("/");
+//   };
+
+//   const login = (value: Login) => {
+//     if (!value.token) return;
+//     console.log("token:", value.token);
+//     localStorage.setItem("token", value.token);
+//     setToken(value.token);
+//   };
+
+//   useEffect(() => {
+//     if (token) {
+//       fetchProfile();
+//     } else {
+//       console.log("fetchProfile skipped — token is undefined");
+//     }
+//   }, [token]);
+
+//   useEffect(() => {
+//     const savedToken = localStorage.getItem("token");
+//     if (savedToken) {
+//       login({ token: savedToken });
+//     }
+//   }, []);
+
+//   const value: Store = {
+//     isLoggedIn: !!token,
+//     user,
+//     token,
+//     logout,
+//     login,
+//   };
+
+//   return <UserStore.Provider value={value}>{children}</UserStore.Provider>;
+//  }
+
 import axios from "axios";
-import { deleteCookie } from "cookies-next";
 import { useRouter } from "next/router";
 import { createContext, ReactElement, useEffect, useState } from "react";
 import { User } from "../pages/users";
@@ -117,7 +220,7 @@ type Store = {
   login: (value: Login) => void;
 };
 
-type Login = Omit<Store, "logout" | "login" | "isLoggedIn" | "user">;
+type Login = { token: string };
 
 export const UserStore = createContext<Store>({
   isLoggedIn: false,
@@ -135,8 +238,8 @@ export default function UserStoreProvider({
   const [user, setUser] = useState<User>();
   const router = useRouter();
 
+  // Fetch user profile using x-access-token header
   async function fetchProfile() {
-    console.log("Calling fetchProfile — Current token:", token);
     if (!token) {
       console.log("fetchProfile skipped — token is undefined");
       return;
@@ -148,46 +251,36 @@ export default function UserStoreProvider({
           "x-access-token": token,
         },
       });
-//       const res = await axios.get("/api/team/profile/", {
-//   headers: {
-//     Authorization: `Bearer ${token}`,
-//   },
-// });
+
       setUser(res.data);
     } catch (err: any) {
-      console.log("⚠️ Error in fetchProfile:", err.response);
+      console.log("Error in fetchProfile:", err?.response?.data || err.message);
       if (err.response?.status === 401 || err.response?.status === 400) logout();
     }
   }
 
+ 
   const logout = () => {
     setToken(undefined);
-    deleteCookie("token");
     localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    router.push("/");
+    setUser(undefined);
+    router.push("/login");
   };
 
-  const login = (value: Login) => {
-    if (!value.token) return;
-    console.log("token:", value.token);
-    localStorage.setItem("token", value.token);
-    setToken(value.token);
+  const login = ({ token }: Login) => {
+    if (!token) return;
+    localStorage.setItem("token", token);
+    setToken(token);
   };
 
   useEffect(() => {
-    if (token) {
-      fetchProfile();
-    } else {
-      console.log("fetchProfile skipped — token is undefined");
-    }
+    if (token) fetchProfile();
   }, [token]);
 
+  
   useEffect(() => {
     const savedToken = localStorage.getItem("token");
-    if (savedToken) {
-      login({ token: savedToken });
-    }
+    if (savedToken) login({ token: savedToken });
   }, []);
 
   const value: Store = {

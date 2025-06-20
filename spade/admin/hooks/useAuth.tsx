@@ -137,6 +137,7 @@
 //     logout,
 //   };
 // }
+
 import { useContext } from "react";
 import { toast } from "react-toastify";
 import axios from "axios";
@@ -174,16 +175,16 @@ export default function useAuth() {
           },
         }
       );
-          console.log("token from backend:", response.data.token);
+       //   console.log("token from backend:", response.data.token);
 
       toast.success("Logged in successfully!");
 
-      // ✅ Only pass token — user will be fetched via fetchProfile()
+      // Only pass token — user will be fetched via fetchProfile()
       loginUser({
         token: response.data.token,
       });
 
-      // ✅ Redirect to dashboard
+      //  Redirect to dashboard
       router.push("/dashboard");
     } catch (error) {
       if (axios.isAxiosError(error)) {
@@ -206,7 +207,7 @@ export default function useAuth() {
 
   const logout = () => {
     localStorage.removeItem("token"); 
-    localStorage.removeItem("user");  // Optional if you're storing user manually
+    localStorage.removeItem("user"); 
     deleteCookie("token");
     toast.success("Logged out successfully!");
     router.push("/login");

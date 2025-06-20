@@ -94,34 +94,148 @@ export default function Users() {
     const [modalUser, setModalUser] = useState<User>(emptyUser)
 
     // Call API to fetch users
-    const fetchUsers = async () => {
-        setLoading(true);
-        const limit = 20;
-        const skip = page > 1 ? (page - 1) * 20 : 0;
-        const options = {
-            method: 'GET',
-            headers: { 'Content-Type': 'application/json' },
-        };
+    // const fetchUsers = async () => {
+    //     setLoading(true);
+    //     const limit = 20;
+    //     const skip = page > 1 ? (page - 1) * 20 : 0;
+    //     const options = {
+    //         method: 'GET',
+    //         headers: { 'Content-Type': 'application/json' },
+    //     };
 
-        const response = await fetch(`/api/team/users?limit=${limit}&skip=${skip}&search=${search}&user=${router.query.user || 0}`, options);
+    //     const response = await fetch(`/api/team/users?limit=${limit}&skip=${skip}&search=${search}&user=${router.query.user || 0}`, options);
 
-        if (response.status === 200) {
-            const data = await response.json();
-            if (!response.ok) {
-                const error = (data && data.message) || response.status;
-                return Promise.reject(error);
-            }
-            setUsers(data);
-            setHasNextPage(data && data.length === limit);
-            setLoading(false);
-        } else {
-            toast.error(await response.text());
-        }
+    //     if (response.status === 200) {
+    //         const data = await response.json();
+    //         if (!response.ok) {
+    //             const error = (data && data.message) || response.status;
+    //             return Promise.reject(error);
+    //         }
+    //         setUsers(data);
+    //         setHasNextPage(data && data.length === limit);
+    //         setLoading(false);
+    //     } else {
+    //         toast.error(await response.text());
+    //     }
+    // }
+
+    // useEffect(() => {
+    //     fetchUsers()
+    // }, [page, search, router.query.user])
+//     useEffect(() => {
+//     if (router.isReady) {
+//         console.log("Calling fetchUsers...");
+//         fetchUsers();
+//     }
+// }, [router.isReady, page, search, router.query.user]);
+
+// const fetchUsers = async () => {
+//     setLoading(true);
+//     const limit = 20;
+//     const skip = page > 1 ? (page - 1) * 20 : 0;
+
+//     const searchParam = encodeURIComponent(search || '');
+//     const userParam = encodeURIComponent(router.query.user || 0);
+
+//     const url = `/api/team/users?limit=${limit}&skip=${skip}&search=${searchParam}&user=${userParam}`;
+//     console.log("Fetching URL:", url); // ⬅️ Add this line
+
+//     try {
+//         const response = await fetch(url, {
+//             method: 'GET',
+//             headers: { 'Content-Type': 'application/json' },
+//         });
+
+//         if (!response.ok) {
+//             const errorText = await response.text();
+//             throw new Error(errorText || `Error ${response.status}`);
+//         }
+
+//         const data = await response.json();
+//         setUsers(data);
+//         setHasNextPage(data.length === limit);
+//     } catch (error) {
+//         toast.error(error.message || 'Something went wrong');
+//     } finally {
+//         setLoading(false);
+//     }
+// // };
+// const fetchUsers = async () => {
+//     setLoading(true);
+//     const limit = 20;
+//     const skip = page > 1 ? (page - 1) * 20 : 0;
+
+//     const searchParam = encodeURIComponent(search || '');
+    
+//     // 🔥 Fix here: safely parse `user` to number
+//     const rawUserParam = router.query.user;
+//     const userParam = typeof rawUserParam === "string" ? parseInt(rawUserParam) || 0 : 0;
+//     console.log("limit", limit, "skip", skip, "userParam", userParam);
+
+//     const url = `/api/team/users?limit=${limit}&skip=${skip}&search=${searchParam}&user=${userParam}`;
+//     console.log("Fetching URL:", url);
+
+//     try {
+//         const response = await fetch(url, {
+//             method: 'GET',
+//             headers: { 'Content-Type': 'application/json' },
+//         });
+
+//         if (!response.ok) {
+//             const errorText = await response.text();
+//             throw new Error(errorText || `Error ${response.status}`);
+//         }
+
+//         const data = await response.json();
+//         setUsers(data);
+//         setHasNextPage(data.length === limit);
+//     } catch (error) {
+//         toast.error(error.message || 'Something went wrong');
+//     } finally {
+//         setLoading(false);
+//     }
+// };
+const fetchUsers = async () => {
+  setLoading(true);
+  const limit = 20;
+  const skip = page > 1 ? (page - 1) * 20 : 0;
+
+  const searchParam = encodeURIComponent(search || '');
+  const rawUserParam = router.query.user;
+  const userParam = typeof rawUserParam === "string" ? parseInt(rawUserParam) || 0 : 0;
+
+  const url = `/api/team/users?limit=${limit}&skip=${skip}&search=${searchParam}&user=${userParam}`;
+ // console.log("Fetching URL:", url);
+
+  try {
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-access-token': localStorage.getItem("token") || "", 
+      },
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText || `Error ${response.status}`);
     }
 
-    useEffect(() => {
-        fetchUsers()
-    }, [page, search, router.query.user])
+    const data = await response.json();
+    setUsers(data);
+    setHasNextPage(data.length === limit);
+  } catch (error) {
+  if (error instanceof Error) {
+    toast.error(error.message);
+  } else {
+    toast.error("Something went wrong");
+  }
+}
+ finally {
+    setLoading(false);
+  }
+};
+
 
     // Call API to add user
     const addUser = async (user: User) => {
