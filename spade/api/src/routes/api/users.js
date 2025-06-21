@@ -429,6 +429,7 @@ router
           },
         });
         if (!user || user.is_banned) {
+          console.log("hi");
           return res.status(400).send("User not found");
         }
         const lastOTP = await OTP.findOne({

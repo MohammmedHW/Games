@@ -250,6 +250,7 @@ const fetchUsers = async () => {
             return;
         }
         const body = {
+            username: user.username,
             name: user.name,
             email: user.email,
             phoneNumber: user.phone,
@@ -262,9 +263,15 @@ const fetchUsers = async () => {
             exposure: user.exposure,
             exposureLimit: user.exposureLimit
         }
+          const token = localStorage.getItem("token");
+
         const options = {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+    'Content-Type': 'application/json',
+    'x-access-token': token || ""
+  },
+
             body: JSON.stringify(body)
         };
 
@@ -296,6 +303,7 @@ const fetchUsers = async () => {
             return;
         }
         const body = {
+            username: user.username,  ///vedansh add this
             name: user.name,
             email: user.email,
             phoneNumber: user.phone,
@@ -308,9 +316,13 @@ const fetchUsers = async () => {
             exposure: user.exposure,
             exposureLimit: user.exposureLimit
         }
+        const token = localStorage.getItem("token")
         const options = {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+    'Content-Type': 'application/json',
+    'x-access-token': token || ""
+  },
             body: JSON.stringify(body)
         };
 
@@ -332,8 +344,11 @@ const fetchUsers = async () => {
         // confirm deleteion
         const confirm = window.confirm('Are you sure you want to delete this user? All data related to this user like bets, deposits, bank accounts etc will also be deleted.')
         if (!confirm) return
-
-        const response = await fetch(`/api/team/users/${id}/`, { method: 'DELETE' });
+        const token = localStorage.getItem("token")
+        const response = await fetch(`/api/team/users/${id}/`, { method: 'DELETE', headers: {
+             'Content-Type': 'application/json',
+                 'x-access-token': token || ""
+        } });
 
         if (response.status === 200) {
             // delete user from state
@@ -609,6 +624,19 @@ const fetchUsers = async () => {
                                     </label>
                                     <input type="text" className="bg-slate-900/80 text-white/80 w-full rounded-md px-4 py-2 mb-4" value={modalUser.phone} onChange={(e) => setModalUser({ ...modalUser, phone: e.target.value })} />
                                 </div>
+        <div className='w-full'>
+    <label className="text-sm text-white/80 mb-2 flex flex-col">
+      Username*
+      <small className='font-light'>Must be unique and at least 5 characters</small>
+    </label>
+    <input
+      type="text"
+      className="bg-slate-900/80 text-white/80 w-full rounded-md px-4 py-2 mb-4"
+      value={modalUser.username}
+      onChange={(e) =>
+        setModalUser({ ...modalUser, username: e.target.value })
+      }/>
+    </div>
                                 <div className='w-full'>
                                     <label className="text-sm text-white/80 mb-2 flex flex-col">
                                         Name
@@ -700,7 +728,10 @@ const fetchUsers = async () => {
                                 <button className="bg-white text-black px-4 py-2 text-base rounded-md mr-4" onClick={() => setShowUserModal(false)}>
                                     Cancel
                                 </button>
-                                <button className="bg-secondary text-black px-4 py-2 text-base rounded-md" onClick={() => {
+                                <button type="button" className="bg-secondary text-black px-4 py-2 text-base rounded-md" onClick={(e) => {
+                                    console.log("Submitted User:", modalUser);
+                                    e.preventDefault();
+                                    e.stopPropagation(); 
                                     if (modalUser.id == 0) {
                                         addUser(modalUser)
                                     } else {

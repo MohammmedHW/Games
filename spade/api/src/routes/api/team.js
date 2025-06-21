@@ -878,7 +878,7 @@ router
           phone: phoneNumber,
           password: await encrypt(newPassword),
           credit: credit,
-          role: "",
+          role: "user",
           // is_active: is_active,
           is_verified: is_verified,
           is_banned,
@@ -928,8 +928,7 @@ router
       .isString()
       .trim()
       .escape()
-      .isLength({ min: 5, max: 80 })
-      .optional({ checkFalsy: true }), // username optional for normal users
+      .isLength({ min: 5, max: 80 }), // username optional for normal users
     body("phoneNumber").isMobilePhone(),
     body("newPassword")
       .isLength({ min: 8, max: 32 })
@@ -986,6 +985,7 @@ router
 
         // if no user found, bail
         if (!user) {
+          console.log("hi45");
           res.status(400);
           return res.send("user not found");
         }
@@ -1057,63 +1057,114 @@ router
       }
     }
   )
-  // Authenticated route: Delete a user.
-  .delete("/users/:id", authorizer, async function (req, res) {
-    try {
-      if (req.user.role !== "admin" && req.user.role !== "subadmin")
-        return res.sendStatus(400); // if req user not admin or subadmin, bail early
-      const id = parseInt(req.params.id);
-      let user;
-      if (req.user.role === "admin") {
-        // find user with scope withAllAssociations
-        user = await USER.scope("withAllAssociations").findOne({
-          where: {
-            id,
-            // and role is empty or null
-            [Op.or]: [{ role: null }, { role: "" }],
-          },
-        });
-      } else if (req.user.role === "subadmin") {
-        user = await USER.scope("withAllAssociations").findOne({
-          where: {
-            id,
-            addedBy: req.user.id,
-            is_superuser: false,
-            // and role is empty or null
-            [Op.or]: [{ role: null }, { role: "" }],
-          },
-        });
-      }
-      if (!user) {
-        res.status(400);
-        return res.send("User not found");
-      }
+  // // Authenticated route: Delete a user.
+  // .delete("/users/:id", authorizer, async function (req, res) {
+  //   try {
+  //     if (req.user.role !== "admin" && req.user.role !== "subadmin")
+  //       return res.sendStatus(400); // if req user not admin or subadmin, bail early
+  //     const id = parseInt(req.params.id);
+  //     let user;
+  //     if (req.user.role === "admin") {
+  //       // find user with scope withAllAssociations
+  //       user = await USER.scope("withAllAssociations").findOne({
+  //         where: {
+  //           id,
+  //           // and role is empty or null
+  //           [Op.or]: [{ role: null }, { role: "" }],
+  //         },
+  //       });
+  //     } else if (req.user.role === "subadmin") {
+  //       user = await USER.scope("withAllAssociations").findOne({
+  //         where: {
+  //           id,
+  //           addedBy: req.user.id,
+  //           is_superuser: false,
+  //           // and role is empty or null
+  //           [Op.or]: [{ role: null }, { role: "" }],
+  //         },
+  //       });
+  //     }
+  //     if (!user) {
+  //       res.status(400);
+  //       console.log("hi");
+  //       return res.send("User not found");
+  //     }
 
-      // if user has bets, bankAccounts, deposits, WithdrawAccounts, Withdrawals, or transactions, delete them first
-      // if (user?.bets?.length > 0)
-      //   await BET.destroy({ where: { user_id: user.id } });
-      // if (user?.bankAccounts?.length > 0)
-      //   await BANKACCOUNT.destroy({ where: { user_id: user.id } });
-      // if (user?.deposits?.length > 0)
-      //   await DEPOSIT.destroy({ where: { user_id: user.id } });
-      // if (user?.withdrawAccounts?.length > 0)
-      //   await WITHDRAW_ACCOUNT.destroy({ where: { user_id: user.id } });
-      // if (user?.updated_by?.length > 0)
-      //   await WITHDRAWALS.destroy({ where: { user_id: user.id } });
-      // if (user?.transactions?.length > 0)
-      //   await TRANSACTION.destroy({ where: { user_id: user.id } });
-      // await user.destroy();
+  //     // if user has bets, bankAccounts, deposits, WithdrawAccounts, Withdrawals, or transactions, delete them first
+  //     // if (user?.bets?.length > 0)
+  //     //   await BET.destroy({ where: { user_id: user.id } });
+  //     // if (user?.bankAccounts?.length > 0)
+  //     //   await BANKACCOUNT.destroy({ where: { user_id: user.id } });
+  //     // if (user?.deposits?.length > 0)
+  //     //   await DEPOSIT.destroy({ where: { user_id: user.id } });
+  //     // if (user?.withdrawAccounts?.length > 0)
+  //     //   await WITHDRAW_ACCOUNT.destroy({ where: { user_id: user.id } });
+  //     // if (user?.updated_by?.length > 0)
+  //     //   await WITHDRAWALS.destroy({ where: { user_id: user.id } });
+  //     // if (user?.transactions?.length > 0)
+  //     //   await TRANSACTION.destroy({ where: { user_id: user.id } });
+  //     // await user.destroy();
 
-      // set user.is_deleted to true
-      user.is_deleted = true;
-      await user.save();
+  //     // set user.is_deleted to true
+  //     user.is_deleted = true;
+  //     await user.save();
 
-      return res.status(200).send(true);
-    } catch (error) {
-      logger.error(`team.users.delete: ${error}`);
-      res.status(400).send("Request Failed");
+  //     return res.status(200).send(true);
+  //   } catch (error) {
+  //     logger.error(`team.users.delete: ${error}`);
+  //     res.status(400).send("Request Failed");
+  //   }
+  // })
+  // Authenticated route: Delete a user (soft delete by setting is_deleted = true)
+.delete("/users/:id", authorizer, async function (req, res) {
+  try {
+    if (req.user.role !== "admin" && req.user.role !== "subadmin") {
+      return res.sendStatus(400); // Only admin or subadmin allowed
     }
-  })
+
+    const id = parseInt(req.params.id);
+    let user;
+
+    if (req.user.role === "admin") {
+      user = await USER.scope("withAllAssociations").findOne({
+        where: { id },
+      });
+    } else if (req.user.role === "subadmin") {
+      user = await USER.scope("withAllAssociations").findOne({
+        where: {
+          id,
+          addedBy: req.user.id,
+          is_superuser: false,
+        },
+      });
+    }
+
+    if (!user) {
+      console.log("hi");
+      return res.status(400).send("User not found");
+    }
+
+    // Prevent deleting self
+    if (req.user.id === user.id) {
+      return res.status(400).send("You cannot delete yourself");
+    }
+
+    // Prevent deleting superuser
+    if (user.is_superuser) {
+      return res.status(400).send("Cannot delete a superuser");
+    }
+
+    // Soft delete: set is_deleted = true
+    user.is_deleted = true;
+    await user.save();
+
+    return res.status(200).send(true);
+  } catch (error) {
+    logger.error(`team.users.delete: ${error}`);
+    return res.status(400).send("Request Failed");
+  }
+})
+
   // Authenticated route: Get all team/admin members where role is admin or subadmin.
   .get(
     "/",
@@ -1287,6 +1338,9 @@ router
         } = req.body;
         const id = parseInt(req.params.id);
         let user;
+        console.log("Logged in User:", req.user);
+console.log("Requested User ID:", id);
+
         // only admin can update all team members, suadmin can only update team members added by him
         if (req.user.role === "subadmin") {
           user = await USER.findOne({
@@ -1298,6 +1352,7 @@ router
           });
         }
         if (!user) {
+          console.log("hi465");
           return res.status(400).send("user not found");
         }
 
@@ -1353,6 +1408,9 @@ router
       // find user by id, and if is_superuser or role == admin is true, then don't delete
       const id = parseInt(req.params.id);
       let user;
+      console.log("Logged in Usdser:", req.user);
+console.log("Requestedsd User ID:", id);
+
       // only admin can delete all team members, suadmin can only delete team members added by him
       if (req.user.role === "subadmin") {
         user = await USER.findOne({
@@ -1364,6 +1422,7 @@ router
         });
       }
       if (!user) {
+        console.log("hi56465");
         return res.status(400).send("User not found");
       }
       if (req.user.id === user.id) {
