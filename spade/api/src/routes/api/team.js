@@ -390,12 +390,7 @@ router
       const user_id = parseInt(req.query.user) || 0;
       const download = req.query.download === 'true' || req.query.download === true;
 
-      console.log("Parsed Params ->", { limit, skip, search, user_id, download });
-
-      // ✅ Check all users in DB
-      const allUsers = await USER.findAll();
-      //console.log("All Users in DB:", allUsers.map(u => u.get({ plain: true })));
-
+     
       let users;
       const include = !download
         ? [
@@ -422,6 +417,7 @@ router
             order: [["id", "DESC"]],
             where: {
               role: "user",
+              is_deleted: false,
               [Op.or]: [
                 { name: { [Op.iLike]: `%${search}%` } },
                 { email: { [Op.iLike]: `%${search}%` } },
@@ -523,7 +519,6 @@ router
 //   "/users",
 //   authorizer,
 
-//   // ✅ Validate query parameters
 //   query("limit").optional().isInt({ min: 0 }),
 //   query("skip").optional().isInt({ min: 0 }),
 //   query("search").optional().isString().trim().escape(),
@@ -548,7 +543,6 @@ router
 //         return res.status(400).json({ errors: errors.array() });
 //       }
 
-//       // ✅ Parse query safely
 //       const limit = parseInt(req.query.limit) || 20;
 //       const skip = parseInt(req.query.skip) || 0;
 //       const search = req.query.search || '';
@@ -676,142 +670,142 @@ router
 // )
 
 
- // Admin only route: Get all users.
-  // .get(
-  //   "/users",
-  //   authorizer,
-  //   query("limit").isNumeric(),
-  //   query("skip").isNumeric(),
-  //   query("search").isString().trim().escape(),
-  //   query("user").isNumeric().optional({ checkFalsy: true }), // user id, for use by admins to get particular user
-  //   query("download").isBoolean().optional({ checkFalsy: true }), // download flag, for use by admins to download all users
-  //   async function (req, res) {
-  //     try {
-  //       if (req.user.role !== "admin" && req.user.role !== "subadmin")
-  //         return res.sendStatus(400); // if req user not admin or subadmin, bail early
-  //       const errors = validationResult(req);
-  //       if (!errors.isEmpty()) {
-  //         return res.status(400).json({ errors: errors.array() });
-  //       }
-  //       const {
-  //         limit = 0,
-  //         skip,
-  //         search,
-  //         user = 0,
-  //         download = false,
-  //       } = req.query;
-  //       const user_id = parseInt(user) || 0;
-  //       let users;
-  //       let include = !download ? [{
-  //         model: TRANSACTION,
-  //         as: "transactions",
-  //         attributes: [
-  //           "id",
-  //           "amount",
-  //           "type",
-  //           "status",
-  //           "createdAt",
-  //           "remark",
-  //         ],
-  //         order: [["id", "DESC"]],
-  //       }] : []; // if download is true, don't include transactions
+ //Admin only route: Get all users.
+  .get(
+    "/users",
+    authorizer,
+    query("limit").isNumeric(),
+    query("skip").isNumeric(),
+    query("search").isString().trim().escape(),
+    query("user").isNumeric().optional({ checkFalsy: true }), // user id, for use by admins to get particular user
+    query("download").isBoolean().optional({ checkFalsy: true }), // download flag, for use by admins to download all users
+    async function (req, res) {
+      try {
+        if (req.user.role !== "admin" && req.user.role !== "subadmin")
+          return res.sendStatus(400); // if req user not admin or subadmin, bail early
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+          return res.status(400).json({ errors: errors.array() });
+        }
+        const {
+          limit = 0,
+          skip,
+          search,
+          user = 0,
+          download = false,
+        } = req.query;
+        const user_id = parseInt(user) || 0;
+        let users;
+        let include = !download ? [{
+          model: TRANSACTION,
+          as: "transactions",
+          attributes: [
+            "id",
+            "amount",
+            "type",
+            "status",
+            "createdAt",
+            "remark",
+          ],
+          order: [["id", "DESC"]],
+        }] : []; // if download is true, don't include transactions
 
-  //       // find all users where role is empty
-  //       // if subadmin, find all users where addedBy is subadmin id, else find all users if admin
-  //       if (req.user.role === "admin") {
-  //         if (user_id > 0) {
-  //           users = await USER.findAll({ where: { id: user_id, role: "", is_deleted: false, }, include }); // findAll instead of findOne, to keep the response consistent
-  //         } else {
-  //           users = await USER.findAll({
-  //             order: [["id", "DESC"]],
-  //             where: {
-  //               role: "",
-  //               // is_deleted: false, // admin get deleted users too
-  //               [Op.or]: [
-  //                 { name: { [Op.iLike]: `%${search}%` } },
-  //                 { email: { [Op.iLike]: `%${search}%` } },
-  //                 { phone: { [Op.iLike]: `%${search}%` } },
-  //                 { id: { [Op.eq]: parseInt(search) || 0 } },
-  //               ],
-  //             },
-  //             limit,
-  //             include,
-  //             offset: skip,
-  //           });
-  //         }
-  //       } else if (req.user.role === "subadmin") {
-  //         users = await USER.findAll({
-  //           order: [["id", "DESC"]],
-  //           where: {
-  //             role: "",
-  //             is_deleted: false,
-  //             addedBy: req.user.id,
-  //             [Op.or]: [
-  //               { name: { [Op.iLike]: `%${search}%` } },
-  //               { email: { [Op.iLike]: `%${search}%` } },
-  //               { phone: { [Op.iLike]: `%${search}%` } },
-  //               { id: { [Op.eq]: parseInt(search) || 0 } },
-  //             ],
-  //           },
-  //           limit,
-  //           include,
-  //           offset: skip,
-  //         });
-  //       }
-  //       if (download) return res.status(200).send(users); // if download flag is true, send users array, below details are not required for download
+        // find all users where role is empty
+        // if subadmin, find all users where addedBy is subadmin id, else find all users if admin
+        if (req.user.role === "admin") {
+          if (user_id > 0) {
+            users = await USER.findAll({ where: { id: user_id, role: "", is_deleted: false, }, include }); // findAll instead of findOne, to keep the response consistent
+          } else {
+            users = await USER.findAll({
+              order: [["id", "DESC"]],
+              where: {
+                role: "",
+                // is_deleted: false, // admin get deleted users too
+                [Op.or]: [
+                  { name: { [Op.iLike]: `%${search}%` } },
+                  { email: { [Op.iLike]: `%${search}%` } },
+                  { phone: { [Op.iLike]: `%${search}%` } },
+                  { id: { [Op.eq]: parseInt(search) || 0 } },
+                ],
+              },
+              limit,
+              include,
+              offset: skip,
+            });
+          }
+        } else if (req.user.role === "subadmin") {
+          users = await USER.findAll({
+            order: [["id", "DESC"]],
+            where: {
+              role: "",
+              is_deleted: false,
+              addedBy: req.user.id,
+              [Op.or]: [
+                { name: { [Op.iLike]: `%${search}%` } },
+                { email: { [Op.iLike]: `%${search}%` } },
+                { phone: { [Op.iLike]: `%${search}%` } },
+                { id: { [Op.eq]: parseInt(search) || 0 } },
+              ],
+            },
+            limit,
+            include,
+            offset: skip,
+          });
+        }
+        if (download) return res.status(200).send(users); // if download flag is true, send users array, below details are not required for download
 
-  //       // for each user, get their winnings, losses, pnl, deposits, withdrawals
-  //       const result = await Promise.all(
-  //         await users.map(async (user) => {
-  //           user = user.get({ plain: true });
-  //           const winnings = await BET.sum("pnl", {
-  //             where: {
-  //               user_id: user.id,
-  //               status: "WON",
-  //               [Op.not]: [{ pnl: null }, { pnl: 0 }],
-  //             },
-  //           });
-  //           const losses = await BET.sum("pnl", {
-  //             where: {
-  //               user_id: user.id,
-  //               status: "LOST",
-  //               [Op.not]: [{ pnl: null }, { pnl: 0 }],
-  //             },
-  //           });
-  //           user.winnings = winnings || 0;
-  //           user.losses = losses || 0;
-  //           user.pnl = winnings - Math.abs(losses);
+        // for each user, get their winnings, losses, pnl, deposits, withdrawals
+        const result = await Promise.all(
+          await users.map(async (user) => {
+            user = user.get({ plain: true });
+            const winnings = await BET.sum("pnl", {
+              where: {
+                user_id: user.id,
+                status: "WON",
+                [Op.not]: [{ pnl: null }, { pnl: 0 }],
+              },
+            });
+            const losses = await BET.sum("pnl", {
+              where: {
+                user_id: user.id,
+                status: "LOST",
+                [Op.not]: [{ pnl: null }, { pnl: 0 }],
+              },
+            });
+            user.winnings = winnings || 0;
+            user.losses = losses || 0;
+            user.pnl = winnings - Math.abs(losses);
 
-  //           // sum all deposits amount for user, where status is approved
-  //           const deposits = await DEPOSIT.sum("amount", {
-  //             where: {
-  //               user_id: user.id,
-  //               status: "approved",
-  //               amount: { [Op.gt]: 0 },
-  //             },
-  //           });
-  //           user.deposits = deposits || 0;
+            // sum all deposits amount for user, where status is approved
+            const deposits = await DEPOSIT.sum("amount", {
+              where: {
+                user_id: user.id,
+                status: "approved",
+                amount: { [Op.gt]: 0 },
+              },
+            });
+            user.deposits = deposits || 0;
 
-  //           // sum all withdrawals amount for user, where status is approved
-  //           const withdrawals = await WITHDRAWALS.sum("amount", {
-  //             where: {
-  //               user_id: user.id,
-  //               status: "approved",
-  //               amount: { [Op.gt]: 0 },
-  //             },
-  //           });
-  //           user.withdrawals = withdrawals || 0;
-  //           return user;
-  //         })
-  //       );
+            // sum all withdrawals amount for user, where status is approved
+            const withdrawals = await WITHDRAWALS.sum("amount", {
+              where: {
+                user_id: user.id,
+                status: "approved",
+                amount: { [Op.gt]: 0 },
+              },
+            });
+            user.withdrawals = withdrawals || 0;
+            return user;
+          })
+        );
 
-  //       return res.status(200).send(result);
-  //     } catch (error) {
-  //       logger.error(`team.users.get: ${error}`);
-  //       res.status(400).send("Request Failed");
-  //     }
-  //   }
-  // )
+        return res.status(200).send(result);
+      } catch (error) {
+        logger.error(`team.users.get: ${error}`);
+        res.status(400).send("Request Failed");
+      }
+    }
+  )
   ////////////////////new one adding here
 
 
