@@ -41,18 +41,18 @@ const router = express.Router();
 //   })
 
 router
-.get("/profile", authorizer, (req, res) => {
-  try {
-    if (!req.user || !["admin", "subadmin"].includes(req.user.role)) {
-      return res.status(403).json({ message: "Forbidden: Invalid role" });
-    }
+  .get("/profile", authorizer, (req, res) => {
+    try {
+      if (!req.user || !["admin", "subadmin"].includes(req.user.role)) {
+        return res.status(403).json({ message: "Forbidden: Invalid role" });
+      }
 
-    res.status(200).json(req.user);
-  } catch (error) {
-    console.error("Profile error:", error);
-    res.status(500).json({ message: "Internal Server Error" });
-  }
-})
+      res.status(200).json(req.user);
+    } catch (error) {
+      console.error("Profile error:", error);
+      res.status(500).json({ message: "Internal Server Error" });
+    }
+  })
 
   // .post(
   //   "/login",
@@ -121,59 +121,59 @@ router
   // )
 
   .post(
-  "/login",
-  body("password").isString().trim().escape().isLength({ min: 8, max: 32 }),
-  body("username").isString().trim().escape().isLength({ min: 5, max: 80 }),
-  async function (req, res) {
-    try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
+    "/login",
+    body("password").isString().trim().escape().isLength({ min: 8, max: 32 }),
+    body("username").isString().trim().escape().isLength({ min: 5, max: 80 }),
+    async function (req, res) {
+      try {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+          return res.status(400).json({ errors: errors.array() });
+        }
+
+        const { username, password } = req.body;
+
+        const user = await USER.scope("withSecret").findOne({
+          where: {
+            username,
+            role: { [Op.or]: ["admin", "subadmin"] },
+          },
+        });
+
+        if (!user) {
+          return res.status(400).send("Username or password incorrect");
+        }
+
+        const verification = await compare(password, user.password);
+        if (!verification) {
+          return res.status(400).send("Username or password incorrect");
+        }
+
+        await user.update({ is_active: true, last_login: new Date() });
+
+        const token = await generateToken(user);
+
+        // ✅ DO NOT set cookie anymore
+        // res.cookie("token", token, { ... }); ← REMOVE THIS
+
+        return res.status(200).json({
+          token,
+          user: {
+            username: user.username,
+            id: user.id,
+            phone: user.phone,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            access: user.access,
+          },
+        });
+      } catch (error) {
+        logger.error(`team.login.post: ${error}`);
+        return res.status(400).send("Request Failed");
       }
-
-      const { username, password } = req.body;
-
-      const user = await USER.scope("withSecret").findOne({
-        where: {
-          username,
-          role: { [Op.or]: ["admin", "subadmin"] },
-        },
-      });
-
-      if (!user) {
-        return res.status(400).send("Username or password incorrect");
-      }
-
-      const verification = await compare(password, user.password);
-      if (!verification) {
-        return res.status(400).send("Username or password incorrect");
-      }
-
-      await user.update({ is_active: true, last_login: new Date() });
-
-      const token = await generateToken(user);
-
-      // ✅ DO NOT set cookie anymore
-      // res.cookie("token", token, { ... }); ← REMOVE THIS
-
-      return res.status(200).json({
-        token,
-        user: {
-          username: user.username,
-          id: user.id,
-          phone: user.phone,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          access: user.access,
-        },
-      });
-    } catch (error) {
-      logger.error(`team.login.post: ${error}`);
-      return res.status(400).send("Request Failed");
     }
-  }
-)
+  )
 
   // dashboard analytics
   .get(
@@ -181,9 +181,7 @@ router
     query("from").isNumeric().isInt({ min: 1, max: 1000 }), // from is number of days to go back from today. 1 is get from last 24 hours, 2 is get from last 48 hours etc.
     authorizer,
     async function (req, res) {
-     
       try {
-       
         if (req.user.role !== "admin") return res.sendStatus(400); // if req user not admin or subadmin, bail early
 
         const { from } = req.query;
@@ -209,7 +207,7 @@ router
             },
           },
         });
-         
+
         // new bets, where created_at is within "from"
         const newBets = await BET.count({
           where: {
@@ -328,7 +326,8 @@ router
       }
     }
   )
-  .get( // get all logs
+  .get(
+    // get all logs
     "/logs",
     authorizer,
     query("limit").isNumeric().optional({ checkFalsy: true }),
@@ -355,73 +354,108 @@ router
       }
     }
   )
-.get(
-  "/users",
-  authorizer,
+  .get(
+    "/users",
+    authorizer,
 
-  // ✅ Validate query parameters
-  query("limit").optional().isInt({ min: 0 }),
-  query("skip").optional().isInt({ min: 0 }),
-  query("search").optional().isString().trim().escape(),
-  query("user").optional().isInt({ min: 0 }),
-  query("download").optional().custom((val) => {
-    return val === 'true' || val === 'false' || typeof val === 'boolean';
-  }),
+    // ✅ Validate query parameters
+    query("limit").optional().isInt({ min: 0 }),
+    query("skip").optional().isInt({ min: 0 }),
+    query("search").optional().isString().trim().escape(),
+    query("user").optional().isInt({ min: 0 }),
+    query("download")
+      .optional()
+      .custom((val) => {
+        return val === "true" || val === "false" || typeof val === "boolean";
+      }),
 
-  async function (req, res) {
-    try {
-      res.setHeader("Cache-Control", "no-store"); // ✅ Prevent caching
-     
+    async function (req, res) {
+      try {
+        res.setHeader("Cache-Control", "no-store"); // ✅ Prevent caching
 
-      if (req.user.role !== "admin" && req.user.role !== "subadmin") {
-        console.log("Unauthorized user");
-        return res.sendStatus(400);
-      }
+        if (req.user.role !== "admin" && req.user.role !== "subadmin") {
+          console.log("Unauthorized user");
+          return res.sendStatus(400);
+        }
 
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        console.log("Validation errors:", errors.array());
-        return res.status(400).json({ errors: errors.array() });
-      }
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+          console.log("Validation errors:", errors.array());
+          return res.status(400).json({ errors: errors.array() });
+        }
 
-      const limit = parseInt(req.query.limit) || 20;
-      const skip = parseInt(req.query.skip) || 0;
-      const search = req.query.search || '';
-      const user_id = parseInt(req.query.user) || 0;
-      const download = req.query.download === 'true' || req.query.download === true;
+        const limit = parseInt(req.query.limit) || 20;
+        const skip = parseInt(req.query.skip) || 0;
+        const search = req.query.search || "";
+        const user_id = parseInt(req.query.user) || 0;
+        const download =
+          req.query.download === "true" || req.query.download === true;
 
-      console.log("Parsed Params ->", { limit, skip, search, user_id, download });
+        console.log("Parsed Params ->", {
+          limit,
+          skip,
+          search,
+          user_id,
+          download,
+        });
 
-      // ✅ Check all users in DB
-      const allUsers = await USER.findAll();
-      //console.log("All Users in DB:", allUsers.map(u => u.get({ plain: true })));
+        // ✅ Check all users in DB
+        const allUsers = await USER.findAll();
+        //console.log("All Users in DB:", allUsers.map(u => u.get({ plain: true })));
 
-      let users;
-      const include = !download
-        ? [
-            {
-              model: TRANSACTION,
-              as: "transactions",
-              attributes: ["id", "amount", "type", "status", "createdAt", "remark"],
+        let users;
+        const include = !download
+          ? [
+              {
+                model: TRANSACTION,
+                as: "transactions",
+                attributes: [
+                  "id",
+                  "amount",
+                  "type",
+                  "status",
+                  "createdAt",
+                  "remark",
+                ],
+                order: [["id", "DESC"]],
+              },
+            ]
+          : [];
+
+        if (req.user.role === "admin") {
+          if (user_id > 0) {
+            console.log(`Fetching specific user_id = ${user_id}`);
+            users = await USER.findAll({
+              where: { id: user_id, role: "user", is_deleted: false },
+              include,
+            });
+            // console.log("Result for specific user fetch:", users.map(u => u.get({ plain: true })));
+          } else {
+            users = await USER.findAll({
               order: [["id", "DESC"]],
-            },
-          ]
-        : [];
-
-      if (req.user.role === "admin") {
-        if (user_id > 0) {
-          console.log(`Fetching specific user_id = ${user_id}`);
-          users = await USER.findAll({
-            where: { id: user_id, role: "user", is_deleted: false },
-            include,
-          });
-         // console.log("Result for specific user fetch:", users.map(u => u.get({ plain: true })));
-        } else {
-         
+              where: {
+                role: "user",
+                [Op.or]: [
+                  { name: { [Op.iLike]: `%${search}%` } },
+                  { email: { [Op.iLike]: `%${search}%` } },
+                  { phone: { [Op.iLike]: `%${search}%` } },
+                  { id: { [Op.eq]: parseInt(search) || 0 } },
+                ],
+              },
+              limit,
+              offset: skip,
+              include,
+            });
+            //console.log(" Result for list fetch:", users.map(u => u.get({ plain: true })));
+          }
+        } else if (req.user.role === "subadmin") {
+          console.log(`👮 Subadmin fetching users`);
           users = await USER.findAll({
             order: [["id", "DESC"]],
             where: {
               role: "user",
+              is_deleted: false,
+              addedBy: req.user.id,
               [Op.or]: [
                 { name: { [Op.iLike]: `%${search}%` } },
                 { email: { [Op.iLike]: `%${search}%` } },
@@ -433,250 +467,225 @@ router
             offset: skip,
             include,
           });
-          //console.log(" Result for list fetch:", users.map(u => u.get({ plain: true })));
         }
-      } else if (req.user.role === "subadmin") {
-        console.log(`👮 Subadmin fetching users`);
-        users = await USER.findAll({
-          order: [["id", "DESC"]],
-          where: {
-            role: "user",
-            is_deleted: false,
-            addedBy: req.user.id,
-            [Op.or]: [
-              { name: { [Op.iLike]: `%${search}%` } },
-              { email: { [Op.iLike]: `%${search}%` } },
-              { phone: { [Op.iLike]: `%${search}%` } },
-              { id: { [Op.eq]: parseInt(search) || 0 } },
-            ],
-          },
-          limit,
-          offset: skip,
-          include,
-        });
-        
+
+        if (download) {
+          return res.status(200).send(users);
+        }
+
+        const result = await Promise.all(
+          users.map(async (user) => {
+            user = user.get({ plain: true });
+
+            const winnings = await BET.sum("pnl", {
+              where: {
+                user_id: user.id,
+                status: "WON",
+                [Op.not]: [{ pnl: null }, { pnl: 0 }],
+              },
+            });
+
+            const losses = await BET.sum("pnl", {
+              where: {
+                user_id: user.id,
+                status: "LOST",
+                [Op.not]: [{ pnl: null }, { pnl: 0 }],
+              },
+            });
+
+            user.winnings = winnings || 0;
+            user.losses = losses || 0;
+            user.pnl = user.winnings - Math.abs(user.losses);
+
+            const deposits = await DEPOSIT.sum("amount", {
+              where: {
+                user_id: user.id,
+                status: "approved",
+                amount: { [Op.gt]: 0 },
+              },
+            });
+
+            user.deposits = deposits || 0;
+
+            const withdrawals = await WITHDRAWALS.sum("amount", {
+              where: {
+                user_id: user.id,
+                status: "approved",
+                amount: { [Op.gt]: 0 },
+              },
+            });
+
+            user.withdrawals = withdrawals || 0;
+
+            return user;
+          })
+        );
+
+        return res.status(200).send(result);
+      } catch (error) {
+        console.error("🔥 team.users.get ERROR:", error);
+        return res.status(400).send("Request Failed");
       }
-
-      if (download) {
-        return res.status(200).send(users);
-      }
-
-      const result = await Promise.all(
-        users.map(async (user) => {
-          user = user.get({ plain: true });
-
-          const winnings = await BET.sum("pnl", {
-            where: {
-              user_id: user.id,
-              status: "WON",
-              [Op.not]: [{ pnl: null }, { pnl: 0 }],
-            },
-          });
-
-          const losses = await BET.sum("pnl", {
-            where: {
-              user_id: user.id,
-              status: "LOST",
-              [Op.not]: [{ pnl: null }, { pnl: 0 }],
-            },
-          });
-
-          user.winnings = winnings || 0;
-          user.losses = losses || 0;
-          user.pnl = user.winnings - Math.abs(user.losses);
-
-          const deposits = await DEPOSIT.sum("amount", {
-            where: {
-              user_id: user.id,
-              status: "approved",
-              amount: { [Op.gt]: 0 },
-            },
-          });
-
-          user.deposits = deposits || 0;
-
-          const withdrawals = await WITHDRAWALS.sum("amount", {
-            where: {
-              user_id: user.id,
-              status: "approved",
-              amount: { [Op.gt]: 0 },
-            },
-          });
-
-          user.withdrawals = withdrawals || 0;
-
-          return user;
-        })
-      );
-
-     
-      return res.status(200).send(result);
-    } catch (error) {
-      console.error("🔥 team.users.get ERROR:", error);
-      return res.status(400).send("Request Failed");
     }
-  }
-)
+  )
 
+  //  .get(
+  //   "/users",
+  //   authorizer,
 
-//  .get(
-//   "/users",
-//   authorizer,
+  //   // ✅ Validate query parameters
+  //   query("limit").optional().isInt({ min: 0 }),
+  //   query("skip").optional().isInt({ min: 0 }),
+  //   query("search").optional().isString().trim().escape(),
+  //   query("user").optional().isInt({ min: 0 }),
+  //   query("download").optional().custom((val) => {
+  //     return val === 'true' || val === 'false' || typeof val === 'boolean';
+  //   }),
 
-//   // ✅ Validate query parameters
-//   query("limit").optional().isInt({ min: 0 }),
-//   query("skip").optional().isInt({ min: 0 }),
-//   query("search").optional().isString().trim().escape(),
-//   query("user").optional().isInt({ min: 0 }),
-//   query("download").optional().custom((val) => {
-//     return val === 'true' || val === 'false' || typeof val === 'boolean';
-//   }),
+  //   async function (req, res) {
+  //     try {
+  //       console.log(" Incoming Query Params:", req.query);
 
-//   async function (req, res) {
-//     try {
-//       console.log(" Incoming Query Params:", req.query);
+  //       if (req.user.role !== "admin" && req.user.role !== "subadmin") {
+  //         console.log(" Unauthorized user");
+  //         return res.sendStatus(400);
+  //       }
+  //       console.log(" Incoming Query Params:", req.query);
 
-//       if (req.user.role !== "admin" && req.user.role !== "subadmin") {
-//         console.log(" Unauthorized user");
-//         return res.sendStatus(400);
-//       }
-//       console.log(" Incoming Query Params:", req.query);
+  //       const errors = validationResult(req);
+  //       if (!errors.isEmpty()) {
+  //         console.log(" Validation errors:", errors.array());
+  //         return res.status(400).json({ errors: errors.array() });
+  //       }
 
-//       const errors = validationResult(req);
-//       if (!errors.isEmpty()) {
-//         console.log(" Validation errors:", errors.array());
-//         return res.status(400).json({ errors: errors.array() });
-//       }
+  //       // ✅ Parse query safely
+  //       const limit = parseInt(req.query.limit) || 20;
+  //       const skip = parseInt(req.query.skip) || 0;
+  //       const search = req.query.search || '';
+  //       const user_id = parseInt(req.query.user) || 0;
+  //       const download = req.query.download === 'true' || req.query.download === true;
 
-//       // ✅ Parse query safely
-//       const limit = parseInt(req.query.limit) || 20;
-//       const skip = parseInt(req.query.skip) || 0;
-//       const search = req.query.search || '';
-//       const user_id = parseInt(req.query.user) || 0;
-//       const download = req.query.download === 'true' || req.query.download === true;
+  //       console.log("✅ Parsed Params ->", { limit, skip, search, user_id, download });
 
-//       console.log("✅ Parsed Params ->", { limit, skip, search, user_id, download });
+  //       let users;
+  //       const include = !download
+  //         ? [
+  //             {
+  //               model: TRANSACTION,
+  //               as: "transactions",
+  //               attributes: ["id", "amount", "type", "status", "createdAt", "remark"],
+  //               order: [["id", "DESC"]],
+  //             },
+  //           ]
+  //         : [];
 
-//       let users;
-//       const include = !download
-//         ? [
-//             {
-//               model: TRANSACTION,
-//               as: "transactions",
-//               attributes: ["id", "amount", "type", "status", "createdAt", "remark"],
-//               order: [["id", "DESC"]],
-//             },
-//           ]
-//         : [];
+  //       if (req.user.role === "admin") {
+  //         if (user_id > 0) {
+  //           console.log(`🔎 Fetching specific user_id = ${user_id}`);
+  //           users = await USER.findAll({
+  //             where: { id: user_id, role: "", is_deleted: false },
+  //             include,
+  //           });
+  //         } else {
+  //           console.log(`📋 Fetching user list with search = "${search}"`);
+  //           users = await USER.findAll({
+  //             order: [["id", "DESC"]],
+  //             where: {
+  //               role: "",
+  //               [Op.or]: [
+  //                 { name: { [Op.iLike]: `%${search}%` } },
+  //                 { email: { [Op.iLike]: `%${search}%` } },
+  //                 { phone: { [Op.iLike]: `%${search}%` } },
+  //                 { id: { [Op.eq]: parseInt(search) || 0 } },
+  //               ],
+  //             },
+  //             limit,
+  //             offset: skip,
+  //             include,
+  //           });
+  //         }
+  //       } else if (req.user.role === "subadmin") {
+  //         console.log(`👮 Subadmin fetching users`);
+  //         users = await USER.findAll({
+  //           order: [["id", "DESC"]],
+  //           where: {
+  //             role: "",
+  //             is_deleted: false,
+  //             addedBy: req.user.id,
+  //             [Op.or]: [
+  //               { name: { [Op.iLike]: `%${search}%` } },
+  //               { email: { [Op.iLike]: `%${search}%` } },
+  //               { phone: { [Op.iLike]: `%${search}%` } },
+  //               { id: { [Op.eq]: parseInt(search) || 0 } },
+  //             ],
+  //           },
+  //           limit,
+  //           offset: skip,
+  //           include,
+  //         });
+  //       }
 
-//       if (req.user.role === "admin") {
-//         if (user_id > 0) {
-//           console.log(`🔎 Fetching specific user_id = ${user_id}`);
-//           users = await USER.findAll({
-//             where: { id: user_id, role: "", is_deleted: false },
-//             include,
-//           });
-//         } else {
-//           console.log(`📋 Fetching user list with search = "${search}"`);
-//           users = await USER.findAll({
-//             order: [["id", "DESC"]],
-//             where: {
-//               role: "",
-//               [Op.or]: [
-//                 { name: { [Op.iLike]: `%${search}%` } },
-//                 { email: { [Op.iLike]: `%${search}%` } },
-//                 { phone: { [Op.iLike]: `%${search}%` } },
-//                 { id: { [Op.eq]: parseInt(search) || 0 } },
-//               ],
-//             },
-//             limit,
-//             offset: skip,
-//             include,
-//           });
-//         }
-//       } else if (req.user.role === "subadmin") {
-//         console.log(`👮 Subadmin fetching users`);
-//         users = await USER.findAll({
-//           order: [["id", "DESC"]],
-//           where: {
-//             role: "",
-//             is_deleted: false,
-//             addedBy: req.user.id,
-//             [Op.or]: [
-//               { name: { [Op.iLike]: `%${search}%` } },
-//               { email: { [Op.iLike]: `%${search}%` } },
-//               { phone: { [Op.iLike]: `%${search}%` } },
-//               { id: { [Op.eq]: parseInt(search) || 0 } },
-//             ],
-//           },
-//           limit,
-//           offset: skip,
-//           include,
-//         });
-//       }
+  //       if (download) {
+  //         return res.status(200).send(users);
+  //       }
 
-//       if (download) {
-//         return res.status(200).send(users);
-//       }
+  //       const result = await Promise.all(
+  //         users.map(async (user) => {
+  //           user = user.get({ plain: true });
 
-//       const result = await Promise.all(
-//         users.map(async (user) => {
-//           user = user.get({ plain: true });
+  //           const winnings = await BET.sum("pnl", {
+  //             where: {
+  //               user_id: user.id,
+  //               status: "WON",
+  //               [Op.not]: [{ pnl: null }, { pnl: 0 }],
+  //             },
+  //           });
 
-//           const winnings = await BET.sum("pnl", {
-//             where: {
-//               user_id: user.id,
-//               status: "WON",
-//               [Op.not]: [{ pnl: null }, { pnl: 0 }],
-//             },
-//           });
+  //           const losses = await BET.sum("pnl", {
+  //             where: {
+  //               user_id: user.id,
+  //               status: "LOST",
+  //               [Op.not]: [{ pnl: null }, { pnl: 0 }],
+  //             },
+  //           });
 
-//           const losses = await BET.sum("pnl", {
-//             where: {
-//               user_id: user.id,
-//               status: "LOST",
-//               [Op.not]: [{ pnl: null }, { pnl: 0 }],
-//             },
-//           });
+  //           user.winnings = winnings || 0;
+  //           user.losses = losses || 0;
+  //           user.pnl = user.winnings - Math.abs(user.losses);
 
-//           user.winnings = winnings || 0;
-//           user.losses = losses || 0;
-//           user.pnl = user.winnings - Math.abs(user.losses);
+  //           const deposits = await DEPOSIT.sum("amount", {
+  //             where: {
+  //               user_id: user.id,
+  //               status: "approved",
+  //               amount: { [Op.gt]: 0 },
+  //             },
+  //           });
 
-//           const deposits = await DEPOSIT.sum("amount", {
-//             where: {
-//               user_id: user.id,
-//               status: "approved",
-//               amount: { [Op.gt]: 0 },
-//             },
-//           });
+  //           user.deposits = deposits || 0;
 
-//           user.deposits = deposits || 0;
+  //           const withdrawals = await WITHDRAWALS.sum("amount", {
+  //             where: {
+  //               user_id: user.id,
+  //               status: "approved",
+  //               amount: { [Op.gt]: 0 },
+  //             },
+  //           });
 
-//           const withdrawals = await WITHDRAWALS.sum("amount", {
-//             where: {
-//               user_id: user.id,
-//               status: "approved",
-//               amount: { [Op.gt]: 0 },
-//             },
-//           });
+  //           user.withdrawals = withdrawals || 0;
 
-//           user.withdrawals = withdrawals || 0;
+  //           return user;
+  //         })
+  //       );
 
-//           return user;
-//         })
-//       );
+  //       return res.status(200).send(result);
+  //     } catch (error) {
+  //       console.error("🔥 team.users.get ERROR:", error);
+  //       return res.status(400).send("Request Failed");
+  //     }
+  //   }
+  // )
 
-//       return res.status(200).send(result);
-//     } catch (error) {
-//       console.error("🔥 team.users.get ERROR:", error);
-//       return res.status(400).send("Request Failed");
-//     }
-//   }
-// )
-
-
- // Admin only route: Get all users.
+  // Admin only route: Get all users.
   // .get(
   //   "/users",
   //   authorizer,
@@ -814,9 +823,6 @@ router
   // )
   ////////////////////new one adding here
 
-
-
-
   // Authenticated route: Add a new user.
   .post(
     "/users",
@@ -909,7 +915,11 @@ router
           });
         }
 
-        sendTelegramMessageAdmin(`User ${user.phone} added${credit > 0 ? ' and credited ₹ ' + credit : ''} by admin: ${req.user.username}`);
+        sendTelegramMessageAdmin(
+          `User ${user.phone} added${
+            credit > 0 ? " and credited ₹ " + credit : ""
+          } by admin: ${req.user.username}`
+        );
 
         return res.status(200).send(true);
       } catch (error) {
@@ -1040,13 +1050,19 @@ router
             type: credit > (user.credit || 0) ? "credit" : "debit",
             amount: Math.abs((user.credit || 0) - credit),
             status: "success",
-            remark: `${credit > (user.credit || 0) ? "Added" : "Reduced"} ₹ ${Math.abs((user.credit || 0) - credit)} by ${req.user.username}`,
+            remark: `${
+              credit > (user.credit || 0) ? "Added" : "Reduced"
+            } ₹ ${Math.abs((user.credit || 0) - credit)} by ${
+              req.user.username
+            }`,
           };
           process.nextTick(() => {
             txEvent.emit("new_transacion", tx);
           });
           user.credit = credit;
-          sendTelegramMessageAdmin(`User ${user.phone} credit changed to ₹ ${credit} by admin: ${req.user.username}`);
+          sendTelegramMessageAdmin(
+            `User ${user.phone} credit changed to ₹ ${credit} by admin: ${req.user.username}`
+          );
         }
 
         await user.save();
@@ -1187,7 +1203,6 @@ router
     body("is_verified").toBoolean(),
     body("is_banned").toBoolean(),
     // body("access").isJSON(),
-   
 
     async function (req, res) {
       try {
