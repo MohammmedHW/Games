@@ -115,9 +115,15 @@ export default function Team() {
             role: user.role,
             access: user.access
         }
+        console.log("Sending to API:", body);
+
+        const token = localStorage.getItem("token");
         const options = {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+    'Content-Type': 'application/json',
+    'x-access-token': token || ""
+  },
             body: JSON.stringify(body)
         };
 
@@ -162,9 +168,15 @@ export default function Team() {
             role: user.role,
             access: user.access
         }
+        console.log("Sending to API:", body);
+
+        const token = localStorage.getItem("token");
         const options = {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`
+  },
             body: JSON.stringify(body)
         };
 
@@ -524,7 +536,9 @@ export default function Team() {
                                 <button className="bg-white text-black px-2 md:px-4 py-2 text-base rounded-md mr-4" onClick={() => setShowTeamModal(false)}>
                                     Cancel
                                 </button>
-                                <button className="bg-secondary text-black px-2 md:px-4 py-2 text-base rounded-md" onClick={() => {
+                                {/* <button type="button" className="bg-secondary text-black px-2 md:px-4 py-2 text-base rounded-md" onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation(); 
                                     if (modalUser.id == 0) {
                                         addTeam(modalUser)
                                     } else {
@@ -532,7 +546,19 @@ export default function Team() {
                                     }
                                 }}>
                                     {modalUser.id == 0 ? 'Add Admin' : 'Update Admin'}
-                                </button>
+                                </button> */}
+                                                        <form
+                        className="flex flex-col justify-start items-start w-full"
+                        onSubmit={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation(); 
+                            if (modalUser.id === 0) {
+                            addTeam(modalUser);
+                            } else {
+                            updateTeam(modalUser);
+                            }
+                        }}
+                        ></form>
                             </div>
                         </div>
                     </div>
