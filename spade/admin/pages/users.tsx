@@ -7,6 +7,7 @@ import { convertReadableDate, convertActiveDate } from '../helpers/date';
 import { HiRefresh } from 'react-icons/hi'
 import { useRouter } from 'next/router';
 import Link from 'next/link';
+import { effect } from 'zod';
 // user interface
 export interface User {
     username: string
@@ -195,6 +196,11 @@ export default function Users() {
 //         setLoading(false);
 //     }
 // };
+ useEffect(() => {
+    fetchUsers();
+  }, [page, search]);
+// useEffect(() => {
+    // if(router.isReady){
 const fetchUsers = async () => {
   setLoading(true);
   const limit = 20;
@@ -235,6 +241,7 @@ const fetchUsers = async () => {
     setLoading(false);
   }
 };
+    // }},[router.isReady, search, page]);
 
 
     // Call API to add user
@@ -488,7 +495,7 @@ const fetchUsers = async () => {
                                                 </span>
                                             ) : ( // if user is not banned
                                                 <span className="bg-green-500 text-white px-2 py-1 rounded-md" title='Active'>
-                                                    {'A'}{<span className='hidden 3xl:inline'>ctive</span>}
+                                                    {'A'}{<span className='hidden 3xl:inline'>Active</span>}
                                                 </span>
                                             )}
                                             {/* {user.is_verified ? ( // if user is verified
@@ -624,6 +631,7 @@ const fetchUsers = async () => {
                                     </label>
                                     <input type="text" className="bg-slate-900/80 text-white/80 w-full rounded-md px-4 py-2 mb-4" value={modalUser.phone} onChange={(e) => setModalUser({ ...modalUser, phone: e.target.value })} />
                                 </div>
+            {modalUser.id === 0 && (
         <div className='w-full'>
     <label className="text-sm text-white/80 mb-2 flex flex-col">
       Username*
@@ -637,6 +645,7 @@ const fetchUsers = async () => {
         setModalUser({ ...modalUser, username: e.target.value })
       }/>
     </div>
+            )}
                                 <div className='w-full'>
                                     <label className="text-sm text-white/80 mb-2 flex flex-col">
                                         Name
