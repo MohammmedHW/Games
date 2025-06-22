@@ -1744,7 +1744,7 @@ router
     "/users",
     authorizer,
 
-    // ✅ Validate query parameters
+    
     query("limit").optional().isInt({ min: 0 }),
     query("skip").optional().isInt({ min: 0 }),
     query("search").optional().isString().trim().escape(),
@@ -1757,7 +1757,7 @@ router
 
     async function (req, res) {
       try {
-        res.setHeader("Cache-Control", "no-store"); // ✅ Prevent caching
+        res.setHeader("Cache-Control", "no-store"); 
 
         if (req.user.role !== "admin" && req.user.role !== "subadmin") {
           console.log("Unauthorized user");
@@ -1785,10 +1785,7 @@ router
           download,
         });
 
-        // ✅ Check all users in DB
-        const allUsers = await USER.findAll();
-        //console.log("All Users in DB:", allUsers.map(u => u.get({ plain: true })));
-
+      
         let users;
         const include = !download
           ? [
@@ -1833,7 +1830,6 @@ router
               offset: skip,
               include,
             });
-            //console.log(" Result for list fetch:", users.map(u => u.get({ plain: true })));
           }
         } else if (req.user.role === "subadmin") {
           console.log(`👮 Subadmin fetching users`);

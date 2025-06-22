@@ -129,7 +129,7 @@ router
                     is_popular,
                     is_featured,
                     is_new,
-                    order: maxOrder + 1,
+                    order: maxOrder+1,
                 });
 
                 return res.status(200).send("Game added");
