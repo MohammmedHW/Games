@@ -97,7 +97,6 @@
 //           </div>
 //         </div>
 
-
 //         {/* tabs with icon analytics data number */}
 //         <div className="w-full">
 //           <div className="mx-auto px-6 lg:px-8 py-8 bg-gradient-to-br from-green-600 to-purple-800 rounded-lg w-full">
@@ -188,11 +187,11 @@
 //   );
 // }
 
-
 import Head from "next/head";
 import { useEffect, useState } from "react";
 import { HiRefresh, HiLockClosed, HiUser } from "react-icons/hi";
 import { toast } from "react-toastify";
+import axios from "axios";
 
 export interface Analytics {
   users: number;
@@ -220,7 +219,7 @@ export default function Dashboard() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loginForm, setLoginForm] = useState({
     username: "admin",
-    password: "admin1234"
+    password: "admin1234",
   });
 
   // Check if user is already logged in
@@ -236,71 +235,88 @@ export default function Dashboard() {
   const handleLoginChange = (e) => {
     setLoginForm({
       ...loginForm,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
   };
 
-  // Handle admin login
-  const handleAdminLogin = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    
-    try {
-      const response = await fetch("/api/users/admin/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(loginForm)
-      });
+  // // Handle admin login
+  // const handleAdminLogin = async (e) => {
+  //   e.preventDefault();
+  //   setLoading(true);
 
-      if (response.ok) {
-        const data = await response.json();
-        localStorage.setItem("token", data.token);
-        localStorage.setItem("user", JSON.stringify(data.user));
-        setIsLoggedIn(true);
-        fetchAnalytics();
-        toast.success("Login successful!");
-      } else {
-        throw new Error(await response.text());
-      }
-    } catch (error) {
-      toast.error(error.message || "Login failed");
-    } finally {
-      setLoading(false);
-    }
-  };
+  //   try {
+  //     const response = await fetch("/api/users/admin/login", {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify(loginForm)
+  //     });
 
-  // Handle logout
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    setIsLoggedIn(false);
-    setAnalytics(null);
-    toast.success("Logged out successfully");
-  };
+  //     if (response.ok) {
+  //       const data = await response.json();
+  //       localStorage.setItem("token", data.token);
+  //       localStorage.setItem("user", JSON.stringify(data.user));
+  //       setIsLoggedIn(true);
+  //       fetchAnalytics();
+  //       toast.success("Login successful!");
+  //     } else {
+  //       throw new Error(await response.text());
+  //     }
+  //   } catch (error) {
+  //     toast.error(error.message || "Login failed");
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
-  // Fetch analytics data
+  // // Handle logout
+  // const handleLogout = () => {
+  //   localStorage.removeItem("token");
+  //   localStorage.removeItem("user");
+  //   setIsLoggedIn(false);
+  //   setAnalytics(null);
+  //   toast.success("Logged out successfully");
+  // };
+
+  // // Fetch analytics data
+  // const fetchAnalytics = async () => {
+  //   setLoading(true);
+  //   const options = {
+  //     method: "GET",
+  //     headers: {
+  //       "Content-Type": "application/json",
+  //       "Authorization": `Bearer ${localStorage.getItem("token")}`
+  //     },
+  //   };
+
+  //   try {
+  //     const response = await fetch(`/api/team/dashboard?from=${from}`, options);
+
+  //     if (response.status === 200) {
+  //       const data = await response.json();
+  //       if (!response.ok) {
+  //         throw new Error(data.message || response.status);
+  //       }
+  //       setAnalytics(data);
+  //     } else {
+  //       throw new Error(await response.text());
+  //     }
+  //   } catch (error) {
+  //     toast.error(error.message || "Failed to fetch analytics");
+  //     if (error.message.includes("Unauthorized")) {
+  //       handleLogout();
+  //     }
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
   const fetchAnalytics = async () => {
     setLoading(true);
-    const options = {
-      method: "GET",
-      headers: { 
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${localStorage.getItem("token")}`
-      },
-    };
-
     try {
-      const response = await fetch(`/api/team/dashboard?from=${from}`, options);
-
-      if (response.status === 200) {
-        const data = await response.json();
-        if (!response.ok) {
-          throw new Error(data.message || response.status);
-        }
-        setAnalytics(data);
-      } else {
-        throw new Error(await response.text());
-      }
+      const response = await axios.get(`/api/team/dashboard?from=${from}`, {
+        headers: { "x-access-token": localStorage.getItem("token") },
+      });
+      setAnalytics(response.data);
     } catch (error) {
       toast.error(error.message || "Failed to fetch analytics");
       if (error.message.includes("Unauthorized")) {
@@ -309,6 +325,36 @@ export default function Dashboard() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleAdminLogin = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const response = await axios.post("/api/users/admin/login", loginForm, {
+        headers: { "Content-Type": "application/json" },
+      });
+
+      localStorage.setItem("token", response.data.token);
+      axios.defaults.headers.common["x-access-token"] = response.data.token;
+
+      setIsLoggedIn(true);
+      fetchAnalytics();
+      toast.success("Login successful!");
+    } catch (error) {
+      toast.error(error.message || "Login failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    delete axios.defaults.headers.common["x-access-token"];
+    setIsLoggedIn(false);
+    setAnalytics(null);
+    toast.success("Logged out successfully");
   };
 
   useEffect(() => {
@@ -432,114 +478,148 @@ export default function Dashboard() {
         <div className="w-full">
           <div className="mx-auto px-6 lg:px-8 py-8 bg-gradient-to-br from-green-600 to-purple-800 rounded-lg w-full">
             {loading && !analytics ? (
-              <div className="text-center text-white py-8">Loading analytics...</div>
+              <div className="text-center text-white py-8">
+                Loading analytics...
+              </div>
             ) : (
               <dl className="grid grid-cols-3 gap-16 text-center lg:grid-cols-6 justify-center items-center self-center justify-items-center w-full">
                 <div className="mx-auto flex flex-col gap-y-4">
-                  <dt className="text-base leading-7 text-gray-200">Total Users</dt>
+                  <dt className="text-base leading-7 text-gray-200">
+                    Total Users
+                  </dt>
                   <dd className="order-first text-3xl font-semibold tracking-tight text-white sm:text-5xl">
                     {analytics?.users?.toLocaleString() || 0}
                   </dd>
                 </div>
 
                 <div className="mx-auto flex flex-col gap-y-4">
-                  <dt className="text-base leading-7 text-gray-200">New Users</dt>
+                  <dt className="text-base leading-7 text-gray-200">
+                    New Users
+                  </dt>
                   <dd className="order-first text-3xl font-semibold tracking-tight text-white sm:text-5xl">
                     + {analytics?.newUsers?.toLocaleString() || 0}
                   </dd>
                 </div>
 
                 <div className="mx-auto flex flex-col gap-y-4">
-                  <dt className="text-base leading-7 text-gray-200">Active Users</dt>
+                  <dt className="text-base leading-7 text-gray-200">
+                    Active Users
+                  </dt>
                   <dd className="order-first text-3xl font-semibold tracking-tight text-white sm:text-5xl">
                     {analytics?.activeUsers?.toLocaleString() || 0}
                   </dd>
                 </div>
 
                 <div className="mx-auto flex flex-col gap-y-4">
-                  <dt className="text-base leading-7 text-gray-200">Total Bets</dt>
+                  <dt className="text-base leading-7 text-gray-200">
+                    Total Bets
+                  </dt>
                   <dd className="order-first text-3xl font-semibold tracking-tight text-white sm:text-5xl">
                     {analytics?.bets?.toLocaleString() || 0}
                   </dd>
                 </div>
 
                 <div className="mx-auto flex flex-col gap-y-4">
-                  <dt className="text-base leading-7 text-gray-200">New Bets</dt>
+                  <dt className="text-base leading-7 text-gray-200">
+                    New Bets
+                  </dt>
                   <dd className="order-first text-3xl font-semibold tracking-tight text-white sm:text-5xl">
                     + {analytics?.newBets?.toLocaleString() || 0}
                   </dd>
                 </div>
 
                 <div className="mx-auto flex flex-col gap-y-4">
-                  <dt className="text-base leading-7 text-gray-200">Bets Won</dt>
+                  <dt className="text-base leading-7 text-gray-200">
+                    Bets Won
+                  </dt>
                   <dd className="order-first text-3xl font-semibold tracking-tight text-white sm:text-5xl">
                     {analytics?.wonBets?.toLocaleString() || 0}
                   </dd>
                 </div>
 
                 <div className="mx-auto flex flex-col gap-y-4">
-                  <dt className="text-base leading-7 text-gray-200">Bets Lost</dt>
+                  <dt className="text-base leading-7 text-gray-200">
+                    Bets Lost
+                  </dt>
                   <dd className="order-first text-3xl font-semibold tracking-tight text-white sm:text-5xl">
                     {analytics?.lostBets?.toLocaleString() || 0}
                   </dd>
                 </div>
 
                 <div className="mx-auto flex flex-col gap-y-4">
-                  <dt className="text-base leading-7 text-gray-200">Bets Open</dt>
+                  <dt className="text-base leading-7 text-gray-200">
+                    Bets Open
+                  </dt>
                   <dd className="order-first text-3xl font-semibold tracking-tight text-white sm:text-5xl">
                     {analytics?.openBets?.toLocaleString() || 0}
                   </dd>
                 </div>
 
                 <div className="mx-auto flex flex-col gap-y-4">
-                  <dt className="text-base leading-7 text-gray-200">Bets Void</dt>
+                  <dt className="text-base leading-7 text-gray-200">
+                    Bets Void
+                  </dt>
                   <dd className="order-first text-3xl font-semibold tracking-tight text-white sm:text-5xl">
                     {analytics?.voidBets?.toLocaleString() || 0}
                   </dd>
                 </div>
 
                 <div className="mx-auto flex flex-col gap-y-4">
-                  <dt className="text-base leading-7 text-gray-200">Sportsbook Bets</dt>
+                  <dt className="text-base leading-7 text-gray-200">
+                    Sportsbook Bets
+                  </dt>
                   <dd className="order-first text-3xl font-semibold tracking-tight text-white sm:text-5xl">
                     {analytics?.sportsBets?.toLocaleString() || 0}
                   </dd>
                 </div>
                 <div className="mx-auto flex flex-col gap-y-4">
-                  <dt className="text-base leading-7 text-gray-200">SB Fancy Bets</dt>
+                  <dt className="text-base leading-7 text-gray-200">
+                    SB Fancy Bets
+                  </dt>
                   <dd className="order-first text-3xl font-semibold tracking-tight text-white sm:text-5xl">
                     {analytics?.sportsFancyBets?.toLocaleString() || 0}
                   </dd>
                 </div>
                 <div className="mx-auto flex flex-col gap-y-4">
-                  <dt className="text-base leading-7 text-gray-200">Live Casino Bets</dt>
+                  <dt className="text-base leading-7 text-gray-200">
+                    Live Casino Bets
+                  </dt>
                   <dd className="order-first text-3xl font-semibold tracking-tight text-white sm:text-5xl">
                     {analytics?.casinoBets?.toLocaleString() || 0}
                   </dd>
                 </div>
 
                 <div className="mx-auto flex flex-col gap-y-4">
-                  <dt className="text-base leading-7 text-gray-200">Total Deposits</dt>
+                  <dt className="text-base leading-7 text-gray-200">
+                    Total Deposits
+                  </dt>
                   <dd className="order-first text-3xl font-semibold tracking-tight text-white sm:text-5xl">
                     {analytics?.deposits?.toLocaleString() || 0}
                   </dd>
                 </div>
 
                 <div className="mx-auto flex flex-col gap-y-4">
-                  <dt className="text-base leading-7 text-gray-200">New Deposits</dt>
+                  <dt className="text-base leading-7 text-gray-200">
+                    New Deposits
+                  </dt>
                   <dd className="order-first text-3xl font-semibold tracking-tight text-white sm:text-5xl">
                     + {analytics?.newDeposits?.toLocaleString() || 0}
                   </dd>
                 </div>
 
                 <div className="mx-auto flex flex-col gap-y-4">
-                  <dt className="text-base leading-7 text-gray-200">Total Withdrawals</dt>
+                  <dt className="text-base leading-7 text-gray-200">
+                    Total Withdrawals
+                  </dt>
                   <dd className="order-first text-3xl font-semibold tracking-tight text-white sm:text-5xl">
                     {analytics?.withdrawals?.toLocaleString() || 0}
                   </dd>
                 </div>
 
                 <div className="mx-auto flex flex-col gap-y-4">
-                  <dt className="text-base leading-7 text-gray-200">New Withdrawals</dt>
+                  <dt className="text-base leading-7 text-gray-200">
+                    New Withdrawals
+                  </dt>
                   <dd className="order-first text-3xl font-semibold tracking-tight text-white sm:text-5xl">
                     + {analytics?.newWithdrawals?.toLocaleString() || 0}
                   </dd>
