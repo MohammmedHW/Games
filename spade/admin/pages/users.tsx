@@ -290,8 +290,8 @@ const fetchUsers = async () => {
             setUsers(updatedUsers)
             // close modal
             setShowUserModal(false)
-            toast.success('User added successfully!');
-            router.reload();
+            toast.success('Customer added successfully!');
+           // router.reload();
         } else {
             toast.error(await response.text());
         }
@@ -337,7 +337,7 @@ const fetchUsers = async () => {
 
         if (response.status === 200) {
             setShowUserModal(false)
-            toast.success('User updated successfully!');
+            toast.success('Customer updated successfully!');
             // update user in state
             const updatedUsers = users.map(u => u.id === user.id ? user : u);
             setUsers(updatedUsers)
@@ -361,7 +361,7 @@ const fetchUsers = async () => {
             // delete user from state
             const updatedUsers = users.filter(u => u.id !== id);
             setUsers(updatedUsers);
-            toast.success('User deleted successfully!');
+            toast.success('Customer deleted successfully!');
         } else {
             toast.error(await response.text());
         }
@@ -370,16 +370,16 @@ const fetchUsers = async () => {
     return (
         <>
             <Head>
-                <title>Users | Spade365</title>
+                <title>Customers | Spade365</title>
                 <meta name="description" content="Users | Spade365" />
             </Head>
             <div className="flex flex-col justify-start items-center min-h-[800px] w-full container mx-auto overflow-hidden">
                 <div className="flex flex-col md:flex-row justify-between w-full items-center mb-8 md:mb-4">
                     <h1 className="text-center md:text-left text-4xl lg:text-5xl my-6 w-1/2">
-                        {!router.query.user ? `Users` : `User ID: ${router.query.user}`}
+                        {!router.query.user ? `Customers` : `User ID: ${router.query.user}`}
                         <button className="bg-white text-black p-1 text-2xl cursor-pointer rounded ml-4" title="Refresh" onClick={() => {
                             fetchUsers()
-                            toast.success('Users refreshed successfully!')
+                            toast.success('Customers refreshed successfully!')
                         }} >
                             <HiRefresh />
                         </button>
@@ -407,14 +407,14 @@ const fetchUsers = async () => {
                         {/* button to add user */}
                         <button
                             className="ml-4 p-2 bg-white text-black rounded-md flex flex-row justify-center items-center"
-                            title='Add User'
+                            title='Add Customer'
                             onClick={() => {
                                 setModalUser(emptyUser)
                                 setShowUserModal(true)
                             }}
                         >
                             <IoIosPersonAdd className='text-2xl' />
-                            <span className='ml-1 hidden lg:inline-block'>Add User</span>
+                            <span className='ml-1 hidden lg:inline-block'>Add Customers</span>
                         </button>
                     </div>
                 </div>
@@ -620,7 +620,7 @@ const fetchUsers = async () => {
                 <div className={`fixed top-0 backdrop-blur left-0 w-full h-full bg-black/50 z-50 flex flex-col justify-center items-center ${showUserModal ? 'visible' : 'invisible'}`}>
                     <div className="bg-slate-900/95 w-[95vw] max-w-[1200px] rounded-md overflow-y-scroll scrollbar-hide flex flex-col justify-start items-start p-4">
                         <h2 className="text-2xl my-4">
-                            {modalUser.id == 0 ? 'Add User' : 'Edit User'}
+                            {modalUser.id == 0 ? 'Add Customer' : 'Edit Customer'}
                         </h2>
                         <div className="flex flex-col justify-start items-start w-full ">
                             <div className='grid grid-cols-2 gap-4 w-full'>
@@ -747,7 +747,7 @@ const fetchUsers = async () => {
                                         updateUser(modalUser)
                                     }
                                 }}>
-                                    {modalUser.id == 0 ? 'Add User' : 'Update User'}
+                                    {modalUser.id == 0 ? 'Add Customer' : 'Update Customer'}
                                 </button>
                             </div>
                         </div>

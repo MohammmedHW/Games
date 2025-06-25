@@ -1360,6 +1360,7 @@ export default function Team() {
       };
 
       const response = await makeRequest("/team/", "POST", body);
+      console.log("📤 Sending role to backend:", user.role);
 
       setTeam([response.user, ...team]);
       setShowTeamModal(false);
@@ -1434,6 +1435,16 @@ export default function Team() {
       console.error("Form submission failed:", error);
     }
   };
+ const getDisplayRole = (role: string | undefined): string => {
+  const roleMap: Record<string, string> = {
+    admin: "Admin",
+    subadmin: "User",
+    agent: "Agent",
+    user: "User",
+  };
+  return role ? roleMap[role] || role : "Unknown";
+};
+
 
   return (
     <>
@@ -1444,13 +1455,13 @@ export default function Team() {
       <div className="flex flex-col justify-start items-center min-h-[800px] w-full mx-auto overflow-hidden">
         <div className="flex flex-col md:flex-row justify-between w-full items-center mb-8 md:mb-4">
           <h1 className="text-center md:text-left text-4xl lg:text-5xl my-6 w-1/2">
-            Users
+            Users/Agents
             <button
               className="bg-white text-black p-1 text-2xl cursor-pointer rounded ml-4"
               title="Refresh Admins"
               onClick={() => {
                 fetchTeam();
-                toast.success("Admins refreshed successfully!");
+                toast.success("Users/Agent refreshed successfully!");
               }}
             >
               <HiRefresh />
@@ -1478,14 +1489,14 @@ export default function Team() {
 
             <button
               className="ml-4 p-2 bg-white text-black rounded-md flex flex-row justify-center items-center"
-              title="Add User"
+              title="Add User/Agent"
               onClick={() => {
                 setModalUser(emptyUser);
                 setShowTeamModal(true);
               }}
             >
               <IoIosPersonAdd className="text-2xl" />
-              <span className="ml-1 hidden lg:inline-block">Add User</span>
+              <span className="ml-1 hidden lg:inline-block">Add User/Agent</span>
             </button>
           </div>
         </div>
@@ -1528,8 +1539,10 @@ export default function Team() {
               </tr>
             </thead>
             <tbody>
-              {team.map((user) => {
-                if (!user) return null;
+              {team
+  .filter((user) => user.role !== "admin") 
+  .map((user) => {
+    if (!user) return null;
 
                 const statusClass = user.is_banned
                   ? "text-red-500"
@@ -1570,7 +1583,8 @@ export default function Team() {
                           : "text-blue-400"
                       }`}
                     >
-                      {user.role}
+                      {getDisplayRole(user.role)}
+
                     </td>
                     <td className="border border-white/20 px-2 md:px-4 py-2">
                       <div className="grid grid-cols-1 gap-2 text-center justify-center items-center">
@@ -1679,22 +1693,39 @@ export default function Team() {
                   {/* Role Selection */}
                   <div className="col-span-1">
                     <label className="block text-white/80 mb-2">Role*</label>
-                    <select
+                    {/* <select
                       className="w-full bg-slate-800 text-white/80 rounded-md p-3"
                       value={modalUser.role}
                       onChange={(e) =>
                         setModalUser({ ...modalUser, role: e.target.value })
                       }
                       required
-                    >
+                    > */}
                       {/* <option value="admin">Admin</option> */}
-                      <option value="subadmin">User</option>
+                      {/* <option value="subadmin">User</option>
                     </select>
                     <p className="text-white/60 text-sm mt-1">
                       {modalUser.role === "admin"
                         ? "Admins have full access to all features"
                         : "Users have limited access based on permissions"}
-                    </p>
+                    </p> */}
+                    <select
+                        className="w-full bg-slate-800 text-white/80 rounded-md p-3"
+                        value={modalUser.role}
+                        onChange={(e) =>
+                          setModalUser({ ...modalUser, role: e.target.value })
+                        }
+                        required
+                      >
+                        <option value="user">User</option>
+                        <option value="agent">Agent</option>
+                      </select>
+                      <p className="text-white/60 text-sm mt-1">
+                        {modalUser.role === "agent"
+                          ? "Agents can manage client-related operations"
+                          : "Users have limited access based on permissions"}
+                      </p>
+
                   </div>
 
                   {/* Username */}

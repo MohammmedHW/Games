@@ -318,11 +318,15 @@ export default function Dashboard() {
       });
       setAnalytics(response.data);
     } catch (error) {
-      toast.error(error.message || "Failed to fetch analytics");
-      if (error.message.includes("Unauthorized")) {
-        handleLogout();
-      }
-    } finally {
+  if (error instanceof Error) {
+    toast.error(error.message || "Failed to fetch analytics");
+    if (error.message.includes("Unauthorized")) {
+      handleLogout();
+    }
+  } else {
+    toast.error("An unknown error occurred");
+  }
+} finally {
       setLoading(false);
     }
   };

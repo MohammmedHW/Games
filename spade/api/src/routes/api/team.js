@@ -1522,7 +1522,7 @@ router
         const user = await USER.scope("withSecret").findOne({
           where: {
             username,
-            role: { [Op.or]: ["admin", "subadmin"] },
+            role: { [Op.or]: ["admin", "subadmin","agent"] },
           },
         });
 
@@ -2268,238 +2268,489 @@ router
   // })
 
   // Authenticated route: Get all team/admin members where role is admin or subadmin.
-  .get(
-    "/",
-    authorizer,
-    query("limit").isNumeric(),
-    query("skip").isNumeric(),
-    query("search").isString().trim().escape(),
-    async function (req, res) {
-      try {
-        // if req user not admin or subadmin, bail early
-        if (req.user.role !== "admin" && req.user.role !== "subadmin")
-          return res.sendStatus(400);
+  // .get(
+  //   "/",
+  //   authorizer,
+  //   query("limit").isNumeric(),
+  //   query("skip").isNumeric(),
+  //   query("search").isString().trim().escape(),
+  //   async function (req, res) {
+  //     try {
+  //       // if req user not admin or subadmin, bail early
+  //       if (req.user.role !== "admin" && req.user.role !== "subadmin")
+  //         return res.sendStatus(400);
 
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-          return res.status(400).json({ errors: errors.array() });
-        }
-        const { limit, skip, search } = req.query;
-        let users;
-        // if admin, get all users, if subadmin get only users added by request user
-        if (req.user.role === "admin") {
-          users = await USER.findAll({
-            order: [["id", "DESC"]],
-            where: {
-              role: { [Op.or]: ["admin", "subadmin"] },
-              [Op.or]: [
-                { name: { [Op.iLike]: `%${search}%` } },
-                { email: { [Op.iLike]: `%${search}%` } },
-                { phone: { [Op.iLike]: `%${search}%` } },
-              ],
-            },
-            limit,
-            offset: skip,
-          });
-        } else if (req.user.role === "subadmin") {
-          users = await USER.findAll({
-            order: [["id", "DESC"]],
-            where: {
-              role: { [Op.or]: ["admin", "subadmin"] },
-              // if subadmin get only users added by request user
-              addedBy: req.user.id,
-              [Op.or]: [
-                { name: { [Op.iLike]: `%${search}%` } },
-                { email: { [Op.iLike]: `%${search}%` } },
-                { phone: { [Op.iLike]: `%${search}%` } },
-              ],
-            },
-            limit,
-            offset: skip,
-          });
-        }
+  //       const errors = validationResult(req);
+  //       if (!errors.isEmpty()) {
+  //         return res.status(400).json({ errors: errors.array() });
+  //       }
+  //       const { limit, skip, search } = req.query;
+  //       let users;
+  //       // if admin, get all users, if subadmin get only users added by request user
+  //       if (req.user.role === "admin") {
+  //         users = await USER.findAll({
+  //           order: [["id", "DESC"]],
+  //           where: {
+  //             role: { [Op.or]: ["admin", "subadmin","agent"] },
+  //             [Op.or]: [
+  //               { name: { [Op.iLike]: `%${search}%` } },
+  //               { email: { [Op.iLike]: `%${search}%` } },
+  //               { phone: { [Op.iLike]: `%${search}%` } },
+  //             ],
+  //           },
+  //           limit,
+  //           offset: skip,
+  //         });
+  //       } else if (req.user.role === "subadmin") {
+  //         users = await USER.findAll({
+  //           order: [["id", "DESC"]],
+  //           where: {
+  //             role: { [Op.or]: ["admin", "subadmin","agent"] },
+  //             // if subadmin get only users added by request user
+  //             addedBy: req.user.id,
+  //             [Op.or]: [
+  //               { name: { [Op.iLike]: `%${search}%` } },
+  //               { email: { [Op.iLike]: `%${search}%` } },
+  //               { phone: { [Op.iLike]: `%${search}%` } },
+  //             ],
+  //           },
+  //           limit,
+  //           offset: skip,
+  //         });
+  //       }
 
-        return res.status(200).send({ users });
-      } catch (error) {
-        logger.error(`team.get: ${error}`);
-        res.status(400).send("Request Failed");
+  //       return res.status(200).send({ users });
+  //     } catch (error) {
+  //       logger.error(`team.get: ${error}`);
+  //       res.status(400).send("Request Failed");
+  //     }
+  //   }
+  // )
+.get(
+  "/",
+  authorizer,
+  query("limit").isNumeric(),
+  query("skip").isNumeric(),
+  query("search").isString().trim().escape(),
+  async function (req, res) {
+    try {
+      if (req.user.role !== "admin" && req.user.role !== "subadmin")
+        return res.sendStatus(400);
+
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
       }
+
+      const { limit, skip, search } = req.query;
+      let users;
+
+      const roleFilter = {
+        role: {
+          [Op.or]: ["admin", "subadmin", "agent", "user"], // include all roles
+        },
+        [Op.or]: [
+          { name: { [Op.iLike]: `%${search}%` } },
+          { email: { [Op.iLike]: `%${search}%` } },
+          { phone: { [Op.iLike]: `%${search}%` } },
+        ],
+      };
+
+      if (req.user.role === "admin") {
+        users = await USER.findAll({
+          order: [["id", "DESC"]],
+          where: roleFilter,
+          limit,
+          offset: skip,
+        });
+      } else {
+        users = await USER.findAll({
+          order: [["id", "DESC"]],
+          where: {
+            ...roleFilter,
+            addedBy: req.user.id,
+          },
+          limit,
+          offset: skip,
+        });
+      }
+
+      return res.status(200).send({ users });
+    } catch (error) {
+      logger.error(`team.get: ${error}`);
+      res.status(400).send("Request Failed");
     }
-  )
+  }
+)
 
   // Authenticated route: Create a new admin/team member. Only admin can add a new team member and only admin can access this route
-  .post(
-    "/",
-    authorizer,
-    body("name").isString().trim().escape().optional({ checkFalsy: true }),
-    body("email").isEmail().normalizeEmail().optional({ checkFalsy: true }),
-    body("phoneNumber").isMobilePhone().optional({ checkFalsy: true }), // optional phone for team members
-    body("username").isString().trim().escape().isLength({ min: 5, max: 80 }),
-    body("newPassword").isLength({ min: 8, max: 32 }).notEmpty(),
-    body("role").isString().trim().escape(),
-    body("is_verified").toBoolean(),
-    body("is_banned").toBoolean(),
-    // body("access").isJSON(),
+//   .post(
+//     "/",
+//     authorizer,
+//     body("name").isString().trim().escape().optional({ checkFalsy: true }),
+//     body("email").isEmail().normalizeEmail().optional({ checkFalsy: true }),
+//     body("phoneNumber").isMobilePhone().optional({ checkFalsy: true }), // optional phone for team members
+//     body("username").isString().trim().escape().isLength({ min: 5, max: 80 }),
+//     body("newPassword").isLength({ min: 8, max: 32 }).notEmpty(),
+//     body("role").isString().trim().escape(),
+//     body("is_verified").toBoolean(),
+//     body("is_banned").toBoolean(),
+//     // body("access").isJSON(),
+//     //////////////////
+//     body("role").custom((value) => {
+//   const allowedRoles = ["admin", "subadmin", "agent", "user"];
+//   if (!allowedRoles.includes(value)) {
+//     throw new Error("Invalid role");
+//   }
+//   return true;
+// }),
+// ///////////////////////
 
-    async function (req, res) {
-      try {
-        // if req user not admin or subadmin, bail early
-        if (req.user.role !== "admin" && req.user.role !== "subadmin")
-          return res.sendStatus(400);
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-          return res.status(400).json({ errors: errors.array() });
-        }
-        let {
-          username,
-          name,
-          email,
-          phoneNumber,
-          newPassword,
-          role,
-          is_verified,
-          is_banned,
-          access,
-          // is_superuser, // update this directly from db
-        } = req.body;
-        // if req user is not admin, but trying to add admin, change role to subadmin
-        if (req.user.role !== "admin" && role === "admin") {
-          role = "subadmin";
-        }
+//     async function (req, res) {
+//       try {
+//         // if req user not admin or subadmin, bail early
+//         if (req.user.role !== "admin" && req.user.role !== "subadmin")
+//           return res.sendStatus(400);
+//         const errors = validationResult(req);
+//         if (!errors.isEmpty()) {
+//           return res.status(400).json({ errors: errors.array() });
+//         }
+//         let {
+//           username,
+//           name,
+//           email,
+//           phoneNumber,
+//           newPassword,
+//           role,
+//           is_verified,
+//           is_banned,
+//           access,
+//           // is_superuser, // update this directly from db
+//         } = req.body;
+//         console.log("🚀 ~ Role received in request body:", role);
+//       console.log("🚀 ~ Full req.body:", req.body);
+//         // if req user is not admin, but trying to add admin, change role to subadmin
+//         // if (req.user.role !== "admin" && role === "admin") {
+//         //   role = "subadmin";
+//         // }
+// //         if (req.user.role !== "admin") {
+// //   if (role === "admin") {
+// //     role = "subadmin";
+// //   } else if (role === "agent") {
+// //     role = "user"; // or throw error if not allowed
+// //   }
+// // }
+// if (req.user.role === "subadmin") {
+//   const allowedRolesForSubadmin = ["agent", "user"];
+//   if (!allowedRolesForSubadmin.includes(role)) {
+//     return res.status(403).send("Subadmin cannot assign this role");
+//   }
+// }
 
-        // check if username already exists
-        const userExists = await USER.findOne({
-          where: { username: username },
-        });
-        if (userExists) {
-          return res.status(400).send("username already exists");
-        }
 
-        const user = await USER.create({
-          username,
-          name,
-          email,
-          phone: phoneNumber,
-          password: await encrypt(newPassword),
-          role,
-          is_verified,
-          is_banned,
-          access,
-          addedBy: req.user.id,
-        });
-        sendTelegramMessageAdmin(
-          `A new admin with username: ${username} created. You can manage the admin from admin panel`
-        );
-        return res.status(200).send(true);
-      } catch (error) {
-        logger.error(`team.post: ${error}`);
-        res.status(400).send("Request Failed");
-      }
+//         // check if username already exists
+//         const userExists = await USER.findOne({
+//           where: { username: username },
+//         });
+//         if (userExists) {
+//           return res.status(400).send("username already exists");
+//         }
+
+//         const user = await USER.create({
+//           username,
+//           name,
+//           email,
+//           phone: phoneNumber,
+//           password: await encrypt(newPassword),
+//           role,
+//           is_verified,
+//           is_banned,
+//           access,
+//           addedBy: req.user.id,
+//         });
+//         sendTelegramMessageAdmin(
+//           `A new admin with username: ${username} created. You can manage the admin from admin panel`
+//         );
+//         return res.status(200).send(true);
+//       } catch (error) {
+//         logger.error(`team.post: ${error}`);
+//         res.status(400).send("Request Failed");
+//       }
+//     }
+//   )
+.post(
+  "/",
+  authorizer,
+  body("name").isString().trim().escape().optional({ checkFalsy: true }),
+  body("email").isEmail().normalizeEmail().optional({ checkFalsy: true }),
+  body("phoneNumber").isMobilePhone().optional({ checkFalsy: true }),
+  body("username").isString().trim().escape().isLength({ min: 5, max: 80 }),
+  body("newPassword").isLength({ min: 8, max: 32 }).notEmpty(),
+  body("role").isString().trim().escape(),
+  body("is_verified").toBoolean(),
+  body("is_banned").toBoolean(),
+  body("role").custom((value) => {
+    const allowedRoles = ["admin", "subadmin", "agent", "user"];
+    if (!allowedRoles.includes(value)) {
+      throw new Error("Invalid role");
     }
-  )
+    return true;
+  }),
+  async function (req, res) {
+    try {
+      if (req.user.role !== "admin" && req.user.role !== "subadmin")
+        return res.sendStatus(400);
+
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
+
+      let {
+        username,
+        name,
+        email,
+        phoneNumber,
+        newPassword,
+        role,
+        is_verified,
+        is_banned,
+        access,
+      } = req.body;
+
+      console.log("🚀 ~ Role received in request body:", role);
+
+      if (req.user.role === "subadmin") {
+        const allowedRolesForSubadmin = ["agent", "user"];
+        if (!allowedRolesForSubadmin.includes(role)) {
+          return res.status(403).send("Subadmin cannot assign this role");
+        }
+      }
+
+      const userExists = await USER.findOne({ where: { username } });
+      if (userExists) {
+        return res.status(400).send("Username already exists");
+      }
+
+      const user = await USER.create({
+        username,
+        name,
+        email,
+        phone: phoneNumber,
+        password: await encrypt(newPassword),
+        role,
+        is_verified,
+        is_banned,
+        access,
+        addedBy: req.user.id,
+      });
+
+      sendTelegramMessageAdmin(
+        `A new team member with username: ${username} created.`
+      );
+
+      return res.status(200).send({ user });
+    } catch (error) {
+      logger.error(`team.post: ${error}`);
+      res.status(400).send("Request Failed");
+    }
+  }
+)
+
 
   // Authenticated route: Update a team member. Only admin can update a team member and only admin can access this route. Superuser can't be updated by admin
-  .put(
-    "/:id",
-    authorizer,
-    body("name").isString().trim().escape().optional({ checkFalsy: true }),
-    body("username").isString().trim().escape().isLength({ min: 5, max: 80 }),
-    body("email").isEmail().normalizeEmail().optional({ checkFalsy: true }),
-    body("phoneNumber").isMobilePhone().optional({ checkFalsy: true }), // optional phone for team members
-    body("newPassword")
-      .isLength({ min: 8, max: 32 })
-      .optional({ checkFalsy: true }),
-    // body("credit").isNumeric(), // team doesnt need credit
-    // body("is_active").toBoolean(),
-    body("is_verified").toBoolean(),
-    body("is_banned").toBoolean(),
-    // body("is_superuser").toBoolean(),  // update this directly from db
-    body("role").isString().trim().escape(),
-    async function (req, res) {
-      try {
-        if (req.user.role !== "admin" && req.user.role !== "subadmin")
-          return res.sendStatus(400); // if req user not admin or subadmin, bail early
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-          return res.status(400).json({ errors: errors.array() });
-        }
-        let {
-          username,
-          name,
-          email,
-          phoneNumber,
-          newPassword,
-          // credit,
-          // is_active,
-          is_verified,
-          is_banned,
-          // is_superuser, // update this directly from db
-          access,
-          role,
-        } = req.body;
-        const id = parseInt(req.params.id);
-        let user;
-        console.log("Logged in User:", req.user);
-        console.log("Requested User ID:", id);
+  // .put(
+  //   "/:id",
+  //   authorizer,
+  //   body("name").isString().trim().escape().optional({ checkFalsy: true }),
+  //   body("username").isString().trim().escape().isLength({ min: 5, max: 80 }),
+  //   body("email").isEmail().normalizeEmail().optional({ checkFalsy: true }),
+  //   body("phoneNumber").isMobilePhone().optional({ checkFalsy: true }), // optional phone for team members
+  //   body("newPassword")
+  //     .isLength({ min: 8, max: 32 })
+  //     .optional({ checkFalsy: true }),
+  //   // body("credit").isNumeric(), // team doesnt need credit
+  //   // body("is_active").toBoolean(),
+  //   body("is_verified").toBoolean(),
+  //   body("is_banned").toBoolean(),
+  //   // body("is_superuser").toBoolean(),  // update this directly from db
+  //   body("role").isString().trim().escape(),
+  //   async function (req, res) {
+  //     try {
+  //       if (req.user.role !== "admin" && req.user.role !== "subadmin")
+  //         return res.sendStatus(400); // if req user not admin or subadmin, bail early
+  //       const errors = validationResult(req);
+  //       if (!errors.isEmpty()) {
+  //         return res.status(400).json({ errors: errors.array() });
+  //       }
+  //       let {
+  //         username,
+  //         name,
+  //         email,
+  //         phoneNumber,
+  //         newPassword,
+  //         // credit,
+  //         // is_active,
+  //         is_verified,
+  //         is_banned,
+  //         // is_superuser, // update this directly from db
+  //         access,
+  //         role,
+  //       } = req.body;
+  //       const id = parseInt(req.params.id);
+  //       let user;
+  //       console.log("Logged in User:", req.user);
+  //       console.log("Requested User ID:", id);
 
-        // only admin can update all team members, suadmin can only update team members added by him
-        if (req.user.role === "subadmin") {
-          user = await USER.findOne({
-            where: { id, addedBy: req.user.id, is_superuser: false },
-          });
-        } else if (req.user.role === "admin") {
-          user = await USER.findOne({
-            where: { id },
-          });
-        }
-        if (!user) {
-          console.log("hi465");
-          return res.status(400).send("user not found");
-        }
+  //       // only admin can update all team members, suadmin can only update team members added by him
+  //       if (req.user.role === "subadmin") {
+  //         user = await USER.findOne({
+  //           where: { id, addedBy: req.user.id, is_superuser: false },
+  //         });
+  //       } else if (req.user.role === "admin") {
+  //         user = await USER.findOne({
+  //           where: { id },
+  //         });
+  //       }
+  //       if (!user) {
+  //         console.log("hi465");
+  //         return res.status(400).send("user not found");
+  //       }
 
-        if (!req.user.is_superuser && user.is_superuser) {
-          // some who is not usperuser is trying to update superuser, bail early
-          return res
-            .status(400)
-            .send(
-              "You can't update superuser, but big balls on you to try this!"
-            );
-        }
+  //       if (!req.user.is_superuser && user.is_superuser) {
+  //         // some who is not usperuser is trying to update superuser, bail early
+  //         return res
+  //           .status(400)
+  //           .send(
+  //             "You can't update superuser, but big balls on you to try this!"
+  //           );
+  //       }
 
-        // check if username already exists but doesn't belong to this user
-        const userExists = await USER.findOne({
-          where: { username, id: { [Op.ne]: id } },
-        });
-        if (userExists) {
-          return res
-            .status(400)
-            .send("Username already belongs to another user");
-        }
+  //       // check if username already exists but doesn't belong to this user
+  //       const userExists = await USER.findOne({
+  //         where: { username, id: { [Op.ne]: id } },
+  //       });
+  //       if (userExists) {
+  //         return res
+  //           .status(400)
+  //           .send("Username already belongs to another user");
+  //       }
 
-        user.username = username;
-        user.name = name;
-        user.email = email;
-        user.phone = phoneNumber;
-        user.access = access;
-        if (newPassword) {
-          user.password = await encrypt(newPassword);
-        }
-        user.role = role;
-        user.is_banned = is_banned;
-        user.is_verified = is_verified;
-        user.role = role;
-        // if req user is not admin, but trying to add admin role, change role to subadmin
-        if (req.user.role !== "admin" && role === "admin") {
-          user.role = "subadmin";
-        }
-        await user.save();
-        return res.status(200).send(true);
-      } catch (error) {
-        logger.error(`team.put: ${error}`);
-        res.status(400).send("Request Failed");
+  //       user.username = username;
+  //       user.name = name;
+  //       user.email = email;
+  //       user.phone = phoneNumber;
+  //       user.access = access;
+  //       if (newPassword) {
+  //         user.password = await encrypt(newPassword);
+  //       }
+  //       user.role = role;
+  //       user.is_banned = is_banned;
+  //       user.is_verified = is_verified;
+  //       user.role = role;
+  //       // if req user is not admin, but trying to add admin role, change role to subadmin
+  //       // if (req.user.role !== "admin" && role === "admin") {
+  //       //   user.role = "subadmin";
+  //       // }
+  //       if (req.user.role !== "admin" && role === "admin") {
+  //         user.role = "subadmin";
+  //       } else {
+  //         user.role = role;
+  //       }
+
+  //       await user.save();
+  //       return res.status(200).send(true);
+  //     } catch (error) {
+  //       logger.error(`team.put: ${error}`);
+  //       res.status(400).send("Request Failed");
+  //     }
+  //   }
+  // )
+.put(
+  "/:id",
+  authorizer,
+  body("name").isString().trim().escape().optional({ checkFalsy: true }),
+  body("username").isString().trim().escape().isLength({ min: 5, max: 80 }),
+  body("email").isEmail().normalizeEmail().optional({ checkFalsy: true }),
+  body("phoneNumber").isMobilePhone().optional({ checkFalsy: true }),
+  body("newPassword")
+    .isLength({ min: 8, max: 32 })
+    .optional({ checkFalsy: true }),
+  body("is_verified").toBoolean(),
+  body("is_banned").toBoolean(),
+  body("role").isString().trim().escape(),
+  async function (req, res) {
+    try {
+      if (req.user.role !== "admin" && req.user.role !== "subadmin")
+        return res.sendStatus(400);
+
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
       }
+
+      let {
+        username,
+        name,
+        email,
+        phoneNumber,
+        newPassword,
+        is_verified,
+        is_banned,
+        access,
+        role,
+      } = req.body;
+
+      const id = parseInt(req.params.id);
+      let user;
+
+      if (req.user.role === "subadmin") {
+        user = await USER.findOne({
+          where: { id, addedBy: req.user.id, is_superuser: false },
+        });
+        const allowedRoles = ["agent", "user"];
+        if (!allowedRoles.includes(role)) {
+          return res.status(403).send("Subadmin cannot assign this role");
+        }
+      } else if (req.user.role === "admin") {
+        user = await USER.findOne({ where: { id } });
+      }
+
+      if (!user) return res.status(400).send("User not found");
+
+      const userExists = await USER.findOne({
+        where: { username, id: { [Op.ne]: id } },
+      });
+      if (userExists)
+        return res.status(400).send("Username already belongs to another user");
+
+      user.username = username;
+      user.name = name;
+      user.email = email;
+      user.phone = phoneNumber;
+      user.access = access;
+      user.is_banned = is_banned;
+      user.is_verified = is_verified;
+
+      // prevent non-admin from setting role to admin
+      if (req.user.role !== "admin" && role === "admin") {
+        user.role = "subadmin"; // downgrade
+      } else {
+        user.role = role;
+      }
+
+      if (newPassword) {
+        user.password = await encrypt(newPassword);
+      }
+
+      await user.save();
+      return res.status(200).send({ user });
+    } catch (error) {
+      logger.error(`team.put: ${error}`);
+      res.status(400).send("Request Failed");
     }
-  )
+  }
+)
 
   // Authenticated route: Delete a team member.
   .delete("/:id", authorizer, async function (req, res) {

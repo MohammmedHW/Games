@@ -83,7 +83,7 @@ const Header = () => {
               >
                 <div className="flex flex-row justify-center items-center">
                   <FaUserFriends className="mr-2 text-xl" />
-                  <span>Users</span>
+                  <span>Customers</span>
                 </div>
               </Link>
             )}
@@ -239,7 +239,7 @@ const Header = () => {
               >
                 <div className="flex flex-row justify-center items-center">
                   <RiAdminFill className="mr-2 text-xl" />
-                  <span>Admins</span>
+                  <span>Users/Agents</span>
                 </div>
               </Link>
             )}
