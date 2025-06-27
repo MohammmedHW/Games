@@ -368,9 +368,9 @@ const fetchUsers = async () => {
                                     {/* <td className="border border-white/20 px-4 py-2">
                                         {user.bonus}
                                     </td> */}
-                                    {/* <td className={`border border-white/20 px-4 py-2 ${user.credit && user.credit > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                    <td className={`border border-white/20 px-4 py-2 ${user.credit && user.credit > 0 ? 'text-green-400' : 'text-red-400'}`}>
                                         <span className='mr-1'>&#8377;</span>{user.credit??0}
-                                    </td> */}
+                                    </td>
                                     <td className="border border-white/20 px-4 py-2 text-left min-w-[250px]">
                                         <div className="flex flex-col justify-start items-start h-full">
                                             <span>Wagering: {user.wagering}</span>
@@ -381,8 +381,8 @@ const fetchUsers = async () => {
                                     </td>
                                     {/* <td className="border border-white/20 px-4 py-2">
                                         {user.exposure}
-                                    </td> */}
-                                    {/* <td className="border border-white/20 px-4 py-2">
+                                    </td>
+                                    <td className="border border-white/20 px-4 py-2">
                                         {user.exposureLimit}
                                     </td> */}
                                     <td className="border border-white/20 px-4 py-2 min-w-[80px]">

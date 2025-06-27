@@ -192,6 +192,7 @@ import { useEffect, useState } from "react";
 import { HiRefresh, HiLockClosed, HiUser } from "react-icons/hi";
 import { toast } from "react-toastify";
 import axios from "axios";
+import { useRouter } from "next/router";
 
 export interface Analytics {
   users: number;
@@ -387,12 +388,14 @@ const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     setLoading(false);
   }
 };
-
+const router = useRouter();
   const handleLogout = () => {
     localStorage.removeItem("token");
     delete axios.defaults.headers.common["x-access-token"];
     setIsLoggedIn(false);
     setAnalytics(null);
+    // router.push("/login")
+    router.reload();
     toast.success("Logged out successfully");
   };
 

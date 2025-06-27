@@ -211,6 +211,8 @@ import axios from "axios";
 import { useRouter } from "next/router";
 import { createContext, ReactElement, useEffect, useState } from "react";
 import { User } from "../pages/users";
+import { boolean } from "zod";
+
 
 type Store = {
   isLoggedIn: boolean;
@@ -218,6 +220,9 @@ type Store = {
   user?: User;
   logout: () => void;
   login: (value: Login) => void;
+  loadingUser: boolean; 
+  setToken: (token: string | undefined) => void;  // ✅ added
+  setUser: (user: User | undefined) => void;  
 };
 
 type Login = { token: string };
@@ -227,6 +232,9 @@ export const UserStore = createContext<Store>({
   token: "",
   logout: () => {},
   login: () => {},
+   loadingUser: true,
+    setToken: () => {},       // ✅ Add dummy defaults
+  setUser: () => {}, 
 });
 
 export default function UserStoreProvider({
@@ -237,7 +245,7 @@ export default function UserStoreProvider({
   const [token, setToken] = useState<string>();
   const [user, setUser] = useState<User>();
   const router = useRouter();
-
+const [loadingUser, setLoadingUser] = useState(true);
   // Fetch user profile using x-access-token header
   async function fetchProfile() {
     if (!token) {
@@ -257,13 +265,18 @@ export default function UserStoreProvider({
       console.log("Error in fetchProfile:", err?.response?.data || err.message);
       if (err.response?.status === 401 || err.response?.status === 400) logout();
     }
+    finally {
+    setLoadingUser(false); // 🔴 stop loading
+  }
   }
 
  
   const logout = () => {
+   
     setToken(undefined);
-    localStorage.removeItem("token");
     setUser(undefined);
+    localStorage.removeItem("token");
+    delete axios.defaults.headers.common["x-access-token"];
     router.push("/login");
   };
 
@@ -275,12 +288,18 @@ export default function UserStoreProvider({
 
   useEffect(() => {
     if (token) fetchProfile();
+    else {
+      setLoadingUser(false); 
+    }
   }, [token]);
 
   
   useEffect(() => {
     const savedToken = localStorage.getItem("token");
     if (savedToken) login({ token: savedToken });
+    else {
+      setLoadingUser(false);
+    }
   }, []);
 
   const value: Store = {
@@ -289,6 +308,9 @@ export default function UserStoreProvider({
     token,
     logout,
     login,
+    loadingUser,
+    setToken, // ✅ now accessible via useContext
+  setUser
   };
 
   return <UserStore.Provider value={value}>{children}</UserStore.Provider>;

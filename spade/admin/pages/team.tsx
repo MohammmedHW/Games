@@ -1221,13 +1221,18 @@ import {
   AiOutlineLoading3Quarters,
 } from "react-icons/ai";
 import { IoIosPersonAdd } from "react-icons/io";
+import { useContext } from "react";
+
 import { User } from "./users";
 import { toast } from "react-toastify";
 import Head from "next/head";
 import { convertReadableDate, convertActiveDate } from "../helpers/date";
 import { HiRefresh } from "react-icons/hi";
+import { UserStore } from "../store/User"; // Adjust path if needed
+
 
 export default function Team() {
+  const { user } = useContext(UserStore);
   const [team, setTeam] = useState<User[]>([]);
   const [page, setPage] = useState(1);
   const [hasNextPage, setHasNextPage] = useState(false);
@@ -1453,53 +1458,56 @@ export default function Team() {
         <meta name="description" content="Team | Spade365" />
       </Head>
       <div className="flex flex-col justify-start items-center min-h-[800px] w-full mx-auto overflow-hidden">
-        <div className="flex flex-col md:flex-row justify-between w-full items-center mb-8 md:mb-4">
-          <h1 className="text-center md:text-left text-4xl lg:text-5xl my-6 w-1/2">
-            Users/Agents
-            <button
-              className="bg-white text-black p-1 text-2xl cursor-pointer rounded ml-4"
-              title="Refresh Admins"
-              onClick={() => {
-                fetchTeam();
-                toast.success("Users/Agent refreshed successfully!");
-              }}
-            >
-              <HiRefresh />
-            </button>
-          </h1>
+        {user?.role !== "subadmin" && (
+  <div className="flex flex-col md:flex-row justify-between w-full items-center mb-8 md:mb-4">
+    <h1 className="text-center md:text-left text-4xl lg:text-5xl my-6 w-1/2">
+      Users/Agents
+      <button
+        className="bg-white text-black p-1 text-2xl cursor-pointer rounded ml-4"
+        title="Refresh Admins"
+        onClick={() => {
+          fetchTeam();
+          toast.success("Users/Agent refreshed successfully!");
+        }}
+      >
+        <HiRefresh />
+      </button>
+    </h1>
 
-          {/* Search and Add Admin Button */}
-          <div className="flex flex-row justify-center md:justify-start items-center w-full md:w-1/2">
-            <div className="md:ml-auto flex flex-row justify-start items-center w-full bg-gray rounded-md border max-w-xs">
-              <button className="p-2 h-full rounded-md">
-                <AiOutlineSearch className="text-2xl" />
-              </button>
-              <input
-                type="search"
-                className="w-full p-2 focus:outline-none focus:ring-0 border-none bg-transparent"
-                placeholder="Search"
-                autoComplete="new-search"
-                value={search}
-                onChange={(e) => {
-                  setPage(1);
-                  setSearch(e.target.value);
-                }}
-              />
-            </div>
+    {/* Search and Add Admin Button */}
+    <div className="flex flex-row justify-center md:justify-start items-center w-full md:w-1/2">
+      <div className="md:ml-auto flex flex-row justify-start items-center w-full bg-gray rounded-md border max-w-xs">
+        <button className="p-2 h-full rounded-md">
+          <AiOutlineSearch className="text-2xl" />
+        </button>
+        <input
+          type="search"
+          className="w-full p-2 focus:outline-none focus:ring-0 border-none bg-transparent"
+          placeholder="Search"
+          autoComplete="new-search"
+          value={search}
+          onChange={(e) => {
+            setPage(1);
+            setSearch(e.target.value);
+          }}
+        />
+      </div>
 
-            <button
-              className="ml-4 p-2 bg-white text-black rounded-md flex flex-row justify-center items-center"
-              title="Add User/Agent"
-              onClick={() => {
-                setModalUser(emptyUser);
-                setShowTeamModal(true);
-              }}
-            >
-              <IoIosPersonAdd className="text-2xl" />
-              <span className="ml-1 hidden lg:inline-block">Add User/Agent</span>
-            </button>
-          </div>
-        </div>
+      <button
+        className="ml-4 p-2 bg-white text-black rounded-md flex flex-row justify-center items-center"
+        title="Add User/Agent"
+        onClick={() => {
+          setModalUser(emptyUser);
+          setShowTeamModal(true);
+        }}
+      >
+        <IoIosPersonAdd className="text-2xl" />
+        <span className="ml-1 hidden lg:inline-block">Add User/Agent</span>
+      </button>
+    </div>
+  </div>
+)}
+
 
         {/* Admins Table */}
         <div className="overflow-x-scroll scrollbar-hide w-full">

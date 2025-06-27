@@ -11,24 +11,32 @@ import { BsChevronDown, BsReverseListColumnsReverse } from "react-icons/bs";
 import useUser from "../hooks/useUser";
 import { MdOutlineLocalOffer } from "react-icons/md";
 import { BiCoinStack } from "react-icons/bi";
+import { UserStore } from "../store/User"; 
 // import { User } from "../pages/users";
-
 const Header = () => {
   const { toggleSideMenuOpen } = useContext(MenuStore);
   const router = useRouter();
   const [activePage, setActivePage] = useState("deposits");
   const { isLoggedIn, user, logout } = useUser();
-
+  
   const getActivePage = () => {
     // get the last part of the url and set it as active page
     const path = router.pathname.split("/");
     const lastPath = path[path.length - 1];
     setActivePage(lastPath);
   };
-
+  
   useEffect(() => {
     getActivePage();
   }, [router.pathname]);
+  console.log("Current user role:", user?.role);
+  
+  
+  const {loadingUser } = useContext(UserStore);
+
+if (loadingUser) return null; // or show a spinner
+
+
 
   return (
     <>
@@ -232,17 +240,20 @@ const Header = () => {
               //   </ul>
               // </div>
             )}
-            {user?.access?.team && (
-              <Link
-                href="/team"
-                className={`hover:text-secondary relative not-italic leading-3 uppercase cursor-pointer sm:uppercase sm:not-italic sm:leading-3 text-xs ${activePage === "team" ? "!text-secondary" : ""}`}
-              >
-                <div className="flex flex-row justify-center items-center">
-                  <RiAdminFill className="mr-2 text-xl" />
-                  <span>Users/Agents</span>
-                </div>
-              </Link>
-            )}
+          
+
+           {user?.access?.team && user?.role !== "subadmin" && (
+                  <Link
+                    href="/team"
+                    className={`hover:text-secondary relative not-italic leading-3 uppercase cursor-pointer sm:uppercase sm:not-italic sm:leading-3 text-xs ${activePage === "team" ? "!text-secondary" : ""}`}
+                  >
+                    <div className="flex flex-row justify-center items-center">
+                      <RiAdminFill className="mr-2 text-xl" />
+                      <span>Users/Agents</span>
+                    </div>
+                  </Link>
+                )}
+
             {user?.access?.games && (
               <Link
                 href="/games"

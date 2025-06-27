@@ -226,6 +226,7 @@ import { UserStore } from "../store/User";
 
 export default function useAuth() {
   const router = useRouter();
+  const { setToken, setUser } = useContext(UserStore);
   const { login: loginUser } = useContext(UserStore);
 
   const login = async ({
@@ -250,9 +251,11 @@ export default function useAuth() {
       toast.success("Logged in successfully!");
 
       // Set token in localStorage and axios defaults
-      localStorage.setItem("token", response.data.token);
-      axios.defaults.headers.common["x-access-token"] = response.data.token;
 
+      ////////////////////////////////make this change
+      // localStorage.setItem("token", response.data.token);
+      // axios.defaults.headers.common["x-access-token"] = response.data.token;
+//////////////////////
       loginUser({
         token: response.data.token,
       });
@@ -262,14 +265,18 @@ export default function useAuth() {
       // Error handling remains the same
     }
   };
+const logout = () => {
+  localStorage.removeItem("token");
+  deleteCookie("token");
+  delete axios.defaults.headers.common["x-access-token"];
 
-  const logout = () => {
-    localStorage.removeItem("token");
-    deleteCookie("token");
-    delete axios.defaults.headers.common["x-access-token"];
-    toast.success("Logged out successfully!");
-    router.push("/login");
-  };
+  setToken(undefined);     
+  setUser(undefined);      
+  toast.success("Logged out successfully!");
+  ///added line
+  // router.push("/login");
+};
+
 
   return { login, logout };
 }
