@@ -1568,7 +1568,7 @@ router
     authorizer,
     async function (req, res) {
       try {
-        if (req.user.role !== "admin") return res.sendStatus(400); // if req user not admin or subadmin, bail early
+        if (req.user.role !== "admin" && req.user.role!=="subadmin") return res.sendStatus(400); // if req user not admin or subadmin, bail early
 
         const { from } = req.query;
 
@@ -1838,7 +1838,7 @@ router
             where: {
               role: "user",
               is_deleted: false,
-              addedBy: req.user.id,
+              // addedBy: req.user.id,
               [Op.or]: [
                 { name: { [Op.iLike]: `%${search}%` } },
                 { email: { [Op.iLike]: `%${search}%` } },
@@ -1850,6 +1850,7 @@ router
             offset: skip,
             include,
           });
+          console.log(users)
         }
 
         if (download) {
