@@ -265,11 +265,17 @@ export default (sequelize, DataTypes) => {
   
   // Rest of the scopes remain same
 
-  User.addScope("withSecret", {
-    attributes: {
-      include: ["password", "token"],
-    },
-  });
+  // User.addScope("withSecret", {
+  //   attributes: {
+  //     include: ["password", "token"],
+  //   },
+  // }
+User.addScope("withSecret", {
+  attributes: { include: ["password"] },
+}
+
+
+);
   // add scope to include all associations
   User.addScope("withAllAssociations", {
     include: [

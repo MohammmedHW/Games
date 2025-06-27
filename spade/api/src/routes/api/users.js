@@ -1,6 +1,32 @@
 // All user related routes will be handled here
 // User routes include things like: user login, user logout, user registration, user profile, user settings, user password reset etc.
 
+// import express from "express";
+// import { generateOtp, timeDiffinMins, timeDiffinSecs } from "../../utils/index.js";
+// import { compare, encrypt } from "../../utils/crypto.js";
+// import { body, query, validationResult } from "express-validator";
+// import { generateToken, deleteToken, findUserByToken } from "../../utils/jwt.js";
+// import db from "../../db/models/index.js";
+// import { Op } from "sequelize";
+// import authorizer from "../../middleware/authorizer.js";
+// import { logger } from "../../utils/logger.js";
+// import NodeCache from "node-cache";
+// import config from "../../config/index.js";
+// import { sendTelegramMessageAdmin } from "../../utils/telegram.js";
+// import { txEvent } from "../../utils/transaction.js";
+// import axios from "axios";
+// const USER = db.USER;
+// const cachedData = new NodeCache({
+//   stdTTL: 30 * 60, // 30 min
+//   checkperiod: 30 * 60 * 0.2, // CHECK EVERY 6 min
+//   maxKeys: -1, // max number of keys in cache, -1 means unlimited
+// }); //expiry time is 30 MIN
+
+// const OTP = db.Otp;
+// const User = db.User;
+// const SITE = db.Site;
+
+// const router = express.Router();
 import express from "express";
 import { generateOtp, timeDiffinMins, timeDiffinSecs } from "../../utils/index.js";
 import { compare, encrypt } from "../../utils/crypto.js";
@@ -16,15 +42,16 @@ import { sendTelegramMessageAdmin } from "../../utils/telegram.js";
 import { txEvent } from "../../utils/transaction.js";
 import axios from "axios";
 
-const cachedData = new NodeCache({
-  stdTTL: 30 * 60, // 30 min
-  checkperiod: 30 * 60 * 0.2, // CHECK EVERY 6 min
-  maxKeys: -1, // max number of keys in cache, -1 means unlimited
-}); //expiry time is 30 MIN
-
+const USER = db.User;
 const OTP = db.Otp;
-const User = db.User;
 const SITE = db.Site;
+const User = db.User; 
+
+const cachedData = new NodeCache({
+  stdTTL: 30 * 60,
+  checkperiod: 30 * 60 * 0.2,
+  maxKeys: -1,
+});
 
 const router = express.Router();
 
@@ -43,7 +70,7 @@ router.post('/agents/login', [
     const user = await User.scope('withSecret').findOne({
       where: {
         username,
-        role: 'agent'  // ✅ Only agent here
+        role: 'agent'  
       }
     });
 
@@ -140,17 +167,21 @@ res.status(200).json({
 // -------
 
 router
-  .get("/otp", query("phoneNumber").isMobilePhone(), async function (req, res) {
+  .get("/otp", query("phoneNumber").isMobilePhone('en-IN'), async function (req, res) {
     try {
       const errors = validationResult(req);
+      console.log("OTP route validation errors:", errors.array());
       if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
       }
       const { phoneNumber } = req.query;
+      console.log("OTP request for phone number:", phoneNumber);
 
       // We are caching the otp sent count for a particular phone number to avoid spamming
       const key = `otpSend${phoneNumber}`;
       const otpSentCount = cachedData.get(key);
+      console.log("OTP send count from cache:", otpSentCount);
+
       if (otpSentCount && otpSentCount >= 5) {
         return res.status(400).send("otp limit reached. try again after after 30 minutes");
       }
@@ -187,6 +218,7 @@ router
         }
       }
       const otp = generateOtp();
+     
 
       // console.log("otp", otp);
 
@@ -219,7 +251,7 @@ router
   .post(
     "/signup",
     body("password").isString().trim().escape().isLength({ min: 8, max: 40 }), // escaping and trimming password for security reasons
-    body("phoneNumber").trim().escape().isMobilePhone(), // escaping and trimming phoneNumber for security reasons
+    body("phoneNumber").trim().escape().isMobilePhone('en-IN'), // escaping and trimming phoneNumber for security reasons
     body("confirmPassword")
       .isString()
       .trim()
@@ -348,79 +380,92 @@ router
       }
     }
   )
-  .post(
-    "/login",
-    body("password").isString().trim().escape().isLength({ min: 8, max: 40 }), // escaping and trimming password for security reasons
-    body("phoneNumber").trim().escape().isMobilePhone(), // escaping and trimming phoneNumber for security reasons
-    async function (req, res) {
-      try {
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-          return res.status(400).json({ errors: errors.array() });
-        }
-
-        // const authToken = req.headers["x-access-token"];
-        // Disabled for now as this was causing issues with logout and login again
-        // const authToken = req.cookies.token || req.headers["x-access-token"];
-        // if (authToken) {
-        //   const user = await findUserByToken(authToken);
-        //   if (user) return res.status(400).send("Already logged in");
-        // }
-
-        const { phoneNumber, password } = req.body;
-        const ip =
-          req.headers["x-forwarded-for"]?.split(",")[0] ||
-          req.headers["x-forwarded-for"] ||
-          req.ip;
-
-        const key = `loginError${ip}`;
-        const errorCount = cachedData.get(key);
-        if (errorCount && errorCount >= 8) {
-          return res.status(400).send("try again after after 30 minutes");
-        }
-        const user = await USER.scope("withSecret").findOne({
-          where: {
-            phone: phoneNumber,
-            role: { [Op.or]: [null, ""] }, // role is empty or null
-            [Op.or]: [{ is_banned: false }, { is_banned: null }, { is_deleted: false }, { is_deleted: null }], // is_banned or is_deleted is false or null
-          },
-        });
-        if (!user || user.is_banned || user.is_deleted) {
-          return res.status(400).send("Username or password incorrect"); // for security reasons, make the error message same as incorrect password
-        }
-        // if (user.token) { // Disabled this as this was causing issues with logging in again
-        //   return res.status(400).send("User already logged in");
-        // }
-        const verification = await compare(password, user.password);
-        if (!verification) {
-          if (!errorCount) cachedData.set(key, 1);
-          else cachedData.set(key, errorCount + 1);
-          return res.status(400).send("Username or password incorrect");
-        }
-        user.update({ is_active: true, last_login: new Date(), ip });
-        const token = await generateToken(user);
-        res.cookie("token", token, {
-          maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
-          httpOnly: true,
-          secure: config.NODE_ENV === "production" ? true : false, // set secure to true in production
-        });
-        // return json with token and user
-        res.status(200).send({
-          token: token,
-          user: {
-            id: user.id,
-            phone: user.phone,
-            name: user.name,
-            email: user.email,
-            role: user.role,
-          },
-        });
-      } catch (error) {
-        logger.error(`users.login.post: ${error}`);
-        res.status(400).send("Request Failed");
+ .post(
+  "/login",
+  body("password").isString().trim().escape().isLength({ min: 8, max: 40 }),
+  body("phoneNumber").trim().escape().isMobilePhone(),
+  async function (req, res) {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        console.log("Validation errors:", errors.array());
+        return res.status(400).json({ errors: errors.array() });
       }
+
+      const { phoneNumber, password } = req.body;
+      console.log("Login attempt:", { phoneNumber });
+
+      const ip =
+        req.headers["x-forwarded-for"]?.split(",")[0] ||
+        req.headers["x-forwarded-for"] ||
+        req.ip;
+
+      const key = `loginError${ip}`;
+      const errorCount = cachedData.get(key);
+      if (errorCount && errorCount >= 8) {
+        return res.status(400).send("Try again after 30 minutes");
+      }
+
+      const user = await USER.findOne({
+        where: {
+          phone: phoneNumber,
+        // //// role: { [Op.or]: [null, ""] },
+          [Op.or]: [
+            { is_banned: false },
+            { is_banned: null },
+            { is_deleted: false },
+            { is_deleted: null },
+          ],
+        },
+        attributes: { include: ["password"] },
+      });
+
+      if (!user) {
+        console.log("User not found or banned/deleted");
+        return res.status(400).send("Username or password incorrect");
+      }
+
+      console.log("User found:", user.phone);
+      console.log("Password entered:", password);
+console.log("Password from DB:", user.password);
+
+      const verification = await compare(password, user.password);
+      console.log("Password match:", verification);
+
+      if (!verification) {
+        if (!errorCount) cachedData.set(key, 1);
+        else cachedData.set(key, errorCount + 1);
+        return res.status(400).send("Username or password incorrect");
+      }
+
+      await user.update({ is_active: true, last_login: new Date(), ip });
+
+      const token = await generateToken(user);
+      console.log("Generated token:", token);
+
+      res.cookie("token", token, {
+        maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+        httpOnly: true,
+        secure: config.NODE_ENV === "production" ? true : false,
+      });
+
+      return res.status(200).send({
+        token: token,
+        user: {
+          id: user.id,
+          phone: user.phone,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+        },
+      });
+    } catch (error) {
+      console.error("users.login.post ERROR:", error.stack || error);
+      logger.error(`users.login.post: ${error.stack || error}`);
+      return res.status(500).send("Internal Server Error");
     }
-  )
+  }
+)
   .get("/logout", authorizer, async function (req, res) {
     try {
       const user = req.user;
@@ -516,7 +561,7 @@ router
   })
   .get("/profile", authorizer, async function (req, res) {
     try {
-      const authToken = req.cookies.token;
+      const authToken = req.headers["x-access-token"];
       if (!authToken) return res.status(200).send(null);
       const user = await findUserByToken(authToken);
       if (!user) return res.status(200).send(null);
