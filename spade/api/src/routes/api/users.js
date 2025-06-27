@@ -28,9 +28,55 @@ const SITE = db.Site;
 
 const router = express.Router();
 
+router.post('/agents/login', [
+  body('username').trim().notEmpty(),
+  body('password').isLength({ min: 8 }),
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { username, password } = req.body;
+
+    const user = await User.scope('withSecret').findOne({
+      where: {
+        username,
+        role: 'agent'  // ✅ Only agent here
+      }
+    });
+
+    if (!user) {
+      console.log('Agent not found:', username);
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    const isValid = await compare(password, user.password);
+    if (!isValid) {
+      console.log('Invalid password for agent:', username);
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    const token = await generateToken(user);
+
+    res.status(200).json({
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      }
+    });
+  } catch (err) {
+    console.error("Agent login error:", err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
 
 
-// -------
+////////////
 // Add new admin login route
 router.post(
   '/admin/login',

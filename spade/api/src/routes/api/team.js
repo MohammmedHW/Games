@@ -1954,8 +1954,8 @@ router
           is_deleted = false,
           credit = 0,
           bonus = 0,
-          exposure,
-          exposureLimit,
+          exposure=0,
+          exposureLimit=0,
         } = req.body;
 
         // check if any user with that phone exists
@@ -2213,119 +2213,6 @@ router
 
 
 
-
-
-
-
-
-  // .delete("/users/:id", authorizer, async function (req, res) {
-  //   try {
-  //     if (req.user.role !== "admin" && req.user.role !== "subadmin") {
-  //       return res.sendStatus(400); // Only admin or subadmin allowed
-  //     }
-
-  //     const id = parseInt(req.params.id);
-  //     let user;
-
-  //     if (req.user.role === "admin") {
-  //       user = await USER.scope("withAllAssociations").findOne({
-  //         where: { id },
-  //       });
-  //     } else if (req.user.role === "subadmin") {
-  //       user = await USER.scope("withAllAssociations").findOne({
-  //         where: {
-  //           id,
-  //           addedBy: req.user.id,
-  //           is_superuser: false,
-  //         },
-  //       });
-  //     }
-
-  //     if (!user) {
-  //       console.log("hi");
-  //       return res.status(400).send("User not found");
-  //     }
-
-  //     // Prevent deleting self
-  //     if (req.user.id === user.id) {
-  //       return res.status(400).send("You cannot delete yourself");
-  //     }
-
-  //     // Prevent deleting superuser
-  //     if (user.is_superuser) {
-  //       return res.status(400).send("Cannot delete a superuser");
-  //     }
-
-  //     // Soft delete: set is_deleted = true
-  //     user.is_deleted = true;
-  //     await user.save();
-
-  //     return res.status(200).send(true);
-  //   } catch (error) {
-  //     logger.error(`team.users.delete: ${error}`);
-  //     return res.status(400).send("Request Failed");
-  //   }
-  // })
-
-  // Authenticated route: Get all team/admin members where role is admin or subadmin.
-  // .get(
-  //   "/",
-  //   authorizer,
-  //   query("limit").isNumeric(),
-  //   query("skip").isNumeric(),
-  //   query("search").isString().trim().escape(),
-  //   async function (req, res) {
-  //     try {
-  //       // if req user not admin or subadmin, bail early
-  //       if (req.user.role !== "admin" && req.user.role !== "subadmin")
-  //         return res.sendStatus(400);
-
-  //       const errors = validationResult(req);
-  //       if (!errors.isEmpty()) {
-  //         return res.status(400).json({ errors: errors.array() });
-  //       }
-  //       const { limit, skip, search } = req.query;
-  //       let users;
-  //       // if admin, get all users, if subadmin get only users added by request user
-  //       if (req.user.role === "admin") {
-  //         users = await USER.findAll({
-  //           order: [["id", "DESC"]],
-  //           where: {
-  //             role: { [Op.or]: ["admin", "subadmin","agent"] },
-  //             [Op.or]: [
-  //               { name: { [Op.iLike]: `%${search}%` } },
-  //               { email: { [Op.iLike]: `%${search}%` } },
-  //               { phone: { [Op.iLike]: `%${search}%` } },
-  //             ],
-  //           },
-  //           limit,
-  //           offset: skip,
-  //         });
-  //       } else if (req.user.role === "subadmin") {
-  //         users = await USER.findAll({
-  //           order: [["id", "DESC"]],
-  //           where: {
-  //             role: { [Op.or]: ["admin", "subadmin","agent"] },
-  //             // if subadmin get only users added by request user
-  //             addedBy: req.user.id,
-  //             [Op.or]: [
-  //               { name: { [Op.iLike]: `%${search}%` } },
-  //               { email: { [Op.iLike]: `%${search}%` } },
-  //               { phone: { [Op.iLike]: `%${search}%` } },
-  //             ],
-  //           },
-  //           limit,
-  //           offset: skip,
-  //         });
-  //       }
-
-  //       return res.status(200).send({ users });
-  //     } catch (error) {
-  //       logger.error(`team.get: ${error}`);
-  //       res.status(400).send("Request Failed");
-  //     }
-  //   }
-  // )
 .get(
   "/",
   authorizer,
