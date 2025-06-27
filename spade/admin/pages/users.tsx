@@ -88,114 +88,12 @@ export default function Users() {
         is_verified: false,
         is_banned: false,
         is_deleted: false,
-        bonus: 0,
+       bonus: 0,
         exposure: 0,
         exposureLimit: -200000, // default 2 lakhs exposure limit
     }
     const [modalUser, setModalUser] = useState<User>(emptyUser)
 
-    // Call API to fetch users
-    // const fetchUsers = async () => {
-    //     setLoading(true);
-    //     const limit = 20;
-    //     const skip = page > 1 ? (page - 1) * 20 : 0;
-    //     const options = {
-    //         method: 'GET',
-    //         headers: { 'Content-Type': 'application/json' },
-    //     };
-
-    //     const response = await fetch(`/api/team/users?limit=${limit}&skip=${skip}&search=${search}&user=${router.query.user || 0}`, options);
-
-    //     if (response.status === 200) {
-    //         const data = await response.json();
-    //         if (!response.ok) {
-    //             const error = (data && data.message) || response.status;
-    //             return Promise.reject(error);
-    //         }
-    //         setUsers(data);
-    //         setHasNextPage(data && data.length === limit);
-    //         setLoading(false);
-    //     } else {
-    //         toast.error(await response.text());
-    //     }
-    // }
-
-    // useEffect(() => {
-    //     fetchUsers()
-    // }, [page, search, router.query.user])
-//     useEffect(() => {
-//     if (router.isReady) {
-//         console.log("Calling fetchUsers...");
-//         fetchUsers();
-//     }
-// }, [router.isReady, page, search, router.query.user]);
-
-// const fetchUsers = async () => {
-//     setLoading(true);
-//     const limit = 20;
-//     const skip = page > 1 ? (page - 1) * 20 : 0;
-
-//     const searchParam = encodeURIComponent(search || '');
-//     const userParam = encodeURIComponent(router.query.user || 0);
-
-//     const url = `/api/team/users?limit=${limit}&skip=${skip}&search=${searchParam}&user=${userParam}`;
-//     console.log("Fetching URL:", url); // ⬅️ Add this line
-
-//     try {
-//         const response = await fetch(url, {
-//             method: 'GET',
-//             headers: { 'Content-Type': 'application/json' },
-//         });
-
-//         if (!response.ok) {
-//             const errorText = await response.text();
-//             throw new Error(errorText || `Error ${response.status}`);
-//         }
-
-//         const data = await response.json();
-//         setUsers(data);
-//         setHasNextPage(data.length === limit);
-//     } catch (error) {
-//         toast.error(error.message || 'Something went wrong');
-//     } finally {
-//         setLoading(false);
-//     }
-// // };
-// const fetchUsers = async () => {
-//     setLoading(true);
-//     const limit = 20;
-//     const skip = page > 1 ? (page - 1) * 20 : 0;
-
-//     const searchParam = encodeURIComponent(search || '');
-    
-//     // 🔥 Fix here: safely parse `user` to number
-//     const rawUserParam = router.query.user;
-//     const userParam = typeof rawUserParam === "string" ? parseInt(rawUserParam) || 0 : 0;
-//     console.log("limit", limit, "skip", skip, "userParam", userParam);
-
-//     const url = `/api/team/users?limit=${limit}&skip=${skip}&search=${searchParam}&user=${userParam}`;
-//     console.log("Fetching URL:", url);
-
-//     try {
-//         const response = await fetch(url, {
-//             method: 'GET',
-//             headers: { 'Content-Type': 'application/json' },
-//         });
-
-//         if (!response.ok) {
-//             const errorText = await response.text();
-//             throw new Error(errorText || `Error ${response.status}`);
-//         }
-
-//         const data = await response.json();
-//         setUsers(data);
-//         setHasNextPage(data.length === limit);
-//     } catch (error) {
-//         toast.error(error.message || 'Something went wrong');
-//     } finally {
-//         setLoading(false);
-//     }
-// };
  useEffect(() => {
     fetchUsers();
   }, [page, search]);
@@ -265,10 +163,10 @@ const fetchUsers = async () => {
             is_verified: user.is_verified,
             is_banned: user.is_banned,
             role: user.role,
-            credit: user.credit,
-            bonus: user.bonus,
-            exposure: user.exposure,
-            exposureLimit: user.exposureLimit
+             credit: 0, 
+            bonus: 0,
+            exposure:  0,
+            exposureLimit: -200000,
         }
           const token = localStorage.getItem("token");
 
@@ -470,9 +368,9 @@ const fetchUsers = async () => {
                                     {/* <td className="border border-white/20 px-4 py-2">
                                         {user.bonus}
                                     </td> */}
-                                    <td className={`border border-white/20 px-4 py-2 ${user.credit && user.credit > 0 ? 'text-green-400' : 'text-red-400'}`}>
-                                        <span className='mr-1'>&#8377;</span>{user.credit}
-                                    </td>
+                                    {/* <td className={`border border-white/20 px-4 py-2 ${user.credit && user.credit > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                        <span className='mr-1'>&#8377;</span>{user.credit??0}
+                                    </td> */}
                                     <td className="border border-white/20 px-4 py-2 text-left min-w-[250px]">
                                         <div className="flex flex-col justify-start items-start h-full">
                                             <span>Wagering: {user.wagering}</span>
@@ -491,7 +389,7 @@ const fetchUsers = async () => {
                                         <div className='grid grid-cols-1 gap-2 text-center justify-center items-center'>
                                             {user.is_banned ? ( // if user is banned
                                                 <span className="bg-red-500 text-white px-2 py-1 rounded-md" title='Banned'>
-                                                    {'B'}{<span className='hidden 3xl:inline'>anned</span>}
+                                                    {'B'}{<span className='hidden 3xl:inline'>banned</span>}
                                                 </span>
                                             ) : ( // if user is not banned
                                                 <span className="bg-green-500 text-white px-2 py-1 rounded-md" title='Active'>
@@ -653,9 +551,6 @@ const fetchUsers = async () => {
                                     </label>
                                     <input type="text" className="bg-slate-900/80 text-white/80 w-full rounded-md px-4 py-2 mb-4" value={modalUser.name} onChange={(e) => setModalUser({ ...modalUser, name: e.target.value })} />
                                 </div>
-                            </div>
-
-                            <div className='grid grid-cols-2 gap-4 w-full'>
                                 <div className='w-full'>
                                     <label className="text-sm text-white/80 mb-2 flex flex-col">
                                         Email
@@ -663,6 +558,16 @@ const fetchUsers = async () => {
                                     </label>
                                     <input type="text" className="bg-slate-900/80 text-white/80 w-full rounded-md px-4 py-2 mb-4" value={modalUser.email} onChange={(e) => setModalUser({ ...modalUser, email: e.target.value })} />
                                 </div>
+                            </div>
+
+                            <div className='grid grid-cols-2 gap-4 w-full'>
+                                {/* <div className='w-full'>
+                                    <label className="text-sm text-white/80 mb-2 flex flex-col">
+                                        Email
+                                        <small className='font-light'>Email of user (if any)</small>
+                                    </label>
+                                    <input type="text" className="bg-slate-900/80 text-white/80 w-full rounded-md px-4 py-2 mb-4" value={modalUser.email} onChange={(e) => setModalUser({ ...modalUser, email: e.target.value })} />
+                                </div> */}
                                 <div className='w-full'>
                                     {/* New password */}
                                     <label className={`text-sm text-white/80 mb-2 font-semibold flex flex-col ${modalUser.id == 0 ? 'font-semibold' : ''}`}>New Password{modalUser.id == 0 ? '*' : ''}
@@ -672,20 +577,20 @@ const fetchUsers = async () => {
                                 </div>
                             </div>
 
-                            <div className='grid grid-cols-2 gap-4 w-full'>
+                            {/* <div className='grid grid-cols-2 gap-4 w-full'>
                                 <div className='w-full'>
                                     <label className="text-sm text-white/80 mb-2 flex flex-col">Credits/Balance (₹)
                                         <small className='font-light'>Credits/Wallet Balance of user. Changing this will update the user balance.</small>
                                     </label>
                                     <input type="number" className="bg-slate-900/80 text-white/80 w-full rounded-md px-4 py-2 mb-4" min={0} value={modalUser.credit} onChange={(e) => setModalUser({ ...modalUser, credit: parseInt(e.target.value) })} />
-                                </div>
+                                </div> */}
 
-                                <div className='w-full'>
+                                {/* <div className='w-full'>
                                     <label className="text-sm text-white/80 mb-2 flex flex-col">Bonus (₹)
                                         <small className='font-light'>Bonus claimed by user. Changing this will update the user bonus.</small>
                                     </label>
                                     <input type="number" className="bg-slate-900/80 text-white/80 w-full rounded-md px-4 py-2 mb-4" min={0} value={modalUser.bonus} onChange={(e) => setModalUser({ ...modalUser, bonus: parseInt(e.target.value) })} />
-                                </div>
+                                </div> */}
 
                                 {/* <div className='w-full'>
                                 <label className="text-sm text-white/80 mb-2 flex flex-col">Is User Verified?</label>
@@ -694,8 +599,8 @@ const fetchUsers = async () => {
                                 <option value={1}>Yes</option>
                             </select>
                             </div> */}
-                            </div>
-                            <div className='grid grid-cols-2 gap-4 w-full'>
+                           {/* // </div> */}
+                            {/* <div className='grid grid-cols-2 gap-4 w-full'>
                                 <div className='w-full'>
                                     <label className="text-sm text-white/80 mb-2 flex flex-col">Exposure (₹)
                                         <small className='font-light'>How much exposure the user currently has for all his bets</small>
@@ -709,7 +614,7 @@ const fetchUsers = async () => {
                                     </label>
                                     <input type="number" className="bg-slate-900/80 text-white/80 w-full rounded-md px-4 py-2 mb-4" min={0} value={modalUser.exposureLimit} onChange={(e) => setModalUser({ ...modalUser, exposureLimit: parseInt(e.target.value) })} />
                                 </div>
-                            </div>
+                            </div> */}
                             <div className='grid grid-cols-2 gap-4 w-full'>
                                 <div className='w-full'>
                                     <label className="text-sm text-white/80 mb-2 flex flex-col">

@@ -218,8 +218,8 @@ export default function Dashboard() {
   const [from, setFrom] = useState(7);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loginForm, setLoginForm] = useState({
-    username: "admin",
-    password: "admin1234",
+    username: "",
+    password: "",
   });
 
   // Check if user is already logged in
@@ -232,13 +232,22 @@ export default function Dashboard() {
   }, []);
 
   // Handle login form changes
-  const handleLoginChange = (e) => {
-    setLoginForm({
-      ...loginForm,
-      [e.target.name]: e.target.value,
-    });
-  };
+  // const handleLoginChange = (e) => {
+  //   setLoginForm({
+  //     ...loginForm,
+  //     [e.target.name]: e.target.value,
+  //   });
+  // };//this is latest old by vedansh
+///////////////////////
+const handleLoginChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  setLoginForm({
+    ...loginForm,
+    [e.target.name]: e.target.value,
+  });
+};
 
+
+/////////////////
   // // Handle admin login
   // const handleAdminLogin = async (e) => {
   //   e.preventDefault();
@@ -331,27 +340,53 @@ export default function Dashboard() {
     }
   };
 
-  const handleAdminLogin = async (e) => {
-    e.preventDefault();
-    setLoading(true);
+//   const handleAdminLogin = async (e) => {
+//     e.preventDefault();
+//     setLoading(true);
 
-    try {
-      const response = await axios.post("/api/users/admin/login", loginForm, {
-        headers: { "Content-Type": "application/json" },
-      });
+//     try {
+//       const response = await axios.post("/api/users/admin/login", loginForm, {
+//         headers: { "Content-Type": "application/json" },
+//       });
 
-      localStorage.setItem("token", response.data.token);
-      axios.defaults.headers.common["x-access-token"] = response.data.token;
+//       localStorage.setItem("token", response.data.token);
+//       axios.defaults.headers.common["x-access-token"] = response.data.token;
 
-      setIsLoggedIn(true);
-      fetchAnalytics();
-      toast.success("Login successful!");
-    } catch (error) {
-      toast.error(error.message || "Login failed");
-    } finally {
-      setLoading(false);
-    }
-  };
+//       setIsLoggedIn(true);
+//       fetchAnalytics();
+//       toast.success("Login successful!");
+//     } catch (error) {
+//   const err = error as Error;
+//   toast.error(err.message || "Login failed");
+// }
+//  finally {
+//       setLoading(false);
+//     }
+//   };
+const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+  e.preventDefault();
+  setLoading(true);
+
+  const loginEndpoint = "/api/users/admin/login"; // 👈 fixed for admin login
+
+  try {
+    const response = await axios.post(loginEndpoint, loginForm, {
+      headers: { "Content-Type": "application/json" },
+    });
+
+    localStorage.setItem("token", response.data.token);
+    axios.defaults.headers.common["x-access-token"] = response.data.token;
+
+    setIsLoggedIn(true);
+    fetchAnalytics();
+    toast.success("Login successful!");
+  } catch (error: any) {
+    const errMsg = error.response?.data?.message || error.message || "Login failed";
+    toast.error(errMsg);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -372,7 +407,7 @@ export default function Dashboard() {
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
         <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
           <h1 className="text-2xl font-bold mb-6 text-center">Admin Login</h1>
-          <form onSubmit={handleAdminLogin}>
+          <form onSubmit={handleLogin}>
             <div className="mb-4">
               <label className="block text-gray-700 mb-2" htmlFor="username">
                 Username

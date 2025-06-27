@@ -1717,7 +1717,7 @@ export default function Team() {
                         }
                         required
                       >
-                        <option value="user">User</option>
+                        <option value="subadmin">User</option>
                         <option value="agent">Agent</option>
                       </select>
                       <p className="text-white/60 text-sm mt-1">
@@ -1902,9 +1902,9 @@ export default function Team() {
                         Processing...
                       </>
                     ) : modalUser.id === 0 ? (
-                      "Add User"
+                      "Add User/Agent"
                     ) : (
-                      "Update User"
+                      "Update User/Agent"
                     )}
                   </button>
                 </div>

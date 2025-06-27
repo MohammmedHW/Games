@@ -257,7 +257,7 @@ export default function useAuth() {
         token: response.data.token,
       });
 
-      router.push("/dashboard");
+      router.push("/");
     } catch (error) {
       // Error handling remains the same
     }
