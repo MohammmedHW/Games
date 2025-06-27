@@ -69,7 +69,7 @@ export default function UserStoreProvider({ children }: { children: ReactElement
   const [token, setToken] = useState<string>();
   const [user, setUser] = useState<User>();
   const router = useRouter();
-
+const [loadingUser, setLoadingUser] = useState(true);
   async function fetchProfile() {
     if (!token) return;
     await axios({

@@ -14,49 +14,102 @@ export default function useAuth() {
   const router = useRouter();
   const { login: loginUser } = useContext(UserStore);
 
-  const login = async ({
-    phoneNumber,
-    password,
-  }: {
-    phoneNumber: string;
-    password: string;
-  }) => {
-    await axios({
-      method: "POST",
-      // url: `/api/users/login`,
-      url: `/api/users/login/`,
-      // headers: {
-      //     "x-access-token": getCookie('token') || '',
-      // },
-      data: {
-        phoneNumber,
-        password,
-      },
-    })
-      .then((res) => {
-        toast.success("Logged in!");
-        loginUser({
-          token: res.data.token,
-        });
+  // const login = async ({
+  //   phoneNumber,
+  //   password,
+  // }: {
+  //   phoneNumber: string;
+  //   password: string;
+  // }) => {
+  //   await axios({
+  //     method: "POST",
+  //     // url: `/api/users/login`,
+  //     url: `/api/users/login/`,
+  //     // headers: {
+  //     //     "x-access-token": getCookie('token') || '',
+  //     // },
+  //     data: {
+  //       phoneNumber,
+  //       password,
+  //     },
+  //   })
+  //     .then((res) => {
+  //       toast.success("Logged in!");
+  //       loginUser({
+  //         token: res.data.token,
+  //       });
 
-        router.reload(); // reloading to hide login modal. do we need context here?
-      })
-      .catch((err) => {
-        if (typeof err.response?.data === "string") {
-          toast.error(err.response.data);
-          return;
-        } else if (err.response?.data?.errors) {
-          const e = err.response.data.errors[0];
-          if (
-            (e.msg as string).toLowerCase() === "invalid value" &&
-            e.param === "password"
-          ) {
-            return;
-          }
-        }
-        toast.error(err.message);
+  //       router.reload(); // reloading to hide login modal. do we need context here?
+  //     })
+  //     .catch((err) => {
+  //       if (typeof err.response?.data === "string") {
+  //         toast.error(err.response.data);
+  //         return;
+  //       } else if (err.response?.data?.errors) {
+  //         const e = err.response.data.errors[0];
+  //         if (
+  //           (e.msg as string).toLowerCase() === "invalid value" &&
+  //           e.param === "password"
+  //         ) {
+  //           return;
+  //         }
+  //       }
+  //       toast.error(err.message);
+  //     });
+  // };
+  
+const login = async ({
+  phoneNumber,
+  password,
+}: {
+  phoneNumber: string;
+  password: string;
+}) => {
+  console.log("Logging in with:", { phoneNumber, password });
+
+  await axios({
+    method: "POST",
+    url: `/api/users/login/`,
+    data: {
+      phoneNumber,
+      password,
+    },
+  })
+    .then((res) => {
+      const token = res.data.token;
+      toast.success("Logged in!");
+
+      // ✅ Save token to localStorage
+      localStorage.setItem("token", token);
+
+      // ✅ Set token in axios for future requests
+      axios.defaults.headers.common["x-access-token"] = token;
+
+      // ✅ Optional: Set in context if you use it
+      loginUser({
+        token,
       });
-  };
+
+      router.reload(); // Reload page to update login state
+    })
+    .catch((err) => {
+      console.log("Login error response:", err?.response?.data);
+
+      if (typeof err.response?.data === "string") {
+        toast.error(err.response.data);
+        return;
+      }
+
+      if (err.response?.data?.errors) {
+        const e = err.response.data.errors[0];
+        console.error("Validation error:", e);
+        toast.error(`${e.param}: ${e.msg}`);
+        return;
+      }
+
+      toast.error(err.message || "Something went wrong");
+    });
+};
 
   const signup = async (data: {
     password: string;
@@ -99,6 +152,7 @@ export default function useAuth() {
     localStorage.removeItem("user");
     deleteCookie("token");
     toast.success("Logged out!");
+    
     router.reload();
   };
 
