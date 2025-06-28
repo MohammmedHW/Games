@@ -46,10 +46,11 @@ export default function Deposits() {
     const fetchDeposits = async () => {
         setLoading(true)
         const limit = 20;
+        const token = localStorage.getItem("token");
         const skip = page > 1 ? (page - 1) * 20 : 0;
         const options = {
             method: 'GET',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json','x-access-token': token || "" },
         };
 
         const response = await fetch(`/api/deposit?limit=${limit}&skip=${skip}&filter=${filter}&user=${router.query.user || 0}`, options);
@@ -74,11 +75,12 @@ export default function Deposits() {
         // get deposit from id
         const deposit = deposits.find(deposit => deposit.id === id)
         // confirm approval
+         const token = localStorage.getItem("token");
         const confirm = window.confirm(`Are you sure you want to approve this deposit? User\'s account will be credited with ₹ ${deposit?.amount}. ${deposit?.bonus ? `Bonus amount of ₹ ${deposit?.bonus} will also be credited` : ''}`)
         if (!confirm) return
         const options = {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json','x-access-token': token || "" },
         };
         const body = JSON.stringify({ status: 'approved' });
         const response = await fetch(`/api/deposit/${id}/`, { ...options, body });
@@ -111,6 +113,7 @@ export default function Deposits() {
             return
         }
         // confirm rejection
+        const token = localStorage.getItem("token");
         const confirm = window.confirm('Are you sure you want to reject this deposit? User will have to request again.')
         if (!confirm) return
         const options = {

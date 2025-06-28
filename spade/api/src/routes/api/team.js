@@ -449,7 +449,7 @@
 //             //console.log(" Result for list fetch:", users.map(u => u.get({ plain: true })));
 //           }
 //         } else if (req.user.role === "subadmin") {
-//           console.log(`👮 Subadmin fetching users`);
+//         
 //           users = await USER.findAll({
 //             order: [["id", "DESC"]],
 //             where: {
@@ -1832,7 +1832,6 @@ router
             });
           }
         } else if (req.user.role === "subadmin") {
-          console.log(`👮 Subadmin fetching users`);
           users = await USER.findAll({
             order: [["id", "DESC"]],
             where: {
@@ -1850,7 +1849,7 @@ router
             offset: skip,
             include,
           });
-          console.log(users)
+          //console.log(users)
         }
 
         if (download) {
@@ -1907,7 +1906,7 @@ router
 
         return res.status(200).send(result);
       } catch (error) {
-        console.error("🔥 team.users.get ERROR:", error);
+        console.error("team.users.get ERROR:", error);
         return res.status(400).send("Request Failed");
       }
     }

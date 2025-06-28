@@ -40,10 +40,11 @@ export default function Transactions() {
     const fetchTransactions = async () => {
         setLoading(true);
         const limit = 40;
+         const token = localStorage.getItem("token")
         const skip = page > 1 ? (page - 1) * limit : 0;
         const options = {
             method: 'GET',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'x-access-token': token || "" },
         };
 
         const response = await fetch(`/api/transactions?limit=${limit}&skip=${skip}&status=${status}&user=${router.query.user || 0}`, options);
