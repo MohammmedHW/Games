@@ -56,10 +56,11 @@ SPADE 365`) // remark for rejecting withdraw request
     const fetchWithdraws = async () => {
         setLoading(true)
         const limit = 20
+        const token = localStorage.getItem("token")
         const skip = page > 1 ? (page - 1) * 20 : 0
         const options = {
             method: 'GET',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'x-access-token': token || "" },
         }
         const response = await fetch(`/api/withdraw?limit=${limit}&skip=${skip}&filter=${filter}&user=${router.query.user || 0}`, options);
 
@@ -85,11 +86,12 @@ SPADE 365`) // remark for rejecting withdraw request
     // Approve withdraw
     const approveWithdraw = async (id: number) => {
         // confirm approval
+        const token = localStorage.getItem("token");
         const confirm = window.confirm('Are you sure you want to approve this withdrawal? Make sure you have transferred money to user\'s bank account.')
         if (!confirm) return
         const options = {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'x-access-token': token || "" },
         };
         const body = JSON.stringify({ status: 'approved' });
         const response = await fetch(`/api/withdraw/${id}`, { ...options, body });

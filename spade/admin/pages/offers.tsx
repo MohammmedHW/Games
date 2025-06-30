@@ -60,10 +60,11 @@ export default function Offers() {
     const fetchOffers = async () => {
         setLoading(true);
         const limit = 20;
+        const token = localStorage.getItem("token");
         const skip = page > 1 ? (page - 1) * 20 : 0;
         const options = {
             method: 'GET',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json','x-access-token': token || ""},
         };
 
         const response = await fetch(`/api/offer?limit=${limit}&skip=${skip}&search=${search}`, options);
@@ -89,13 +90,14 @@ export default function Offers() {
     // Call API to add Offer
     const addOffer = async (offer: Offer) => {
         // if offer details are empty, return
+        const token = localStorage.getItem("token");
         if (!offer.name || !offer.type || !offer.code) {
             toast.error('Name, Type, Value & Code are required to add an Offer');
             return;
         }
         const options = {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json','x-access-token': token||"" },
             body: JSON.stringify(offer)
         };
 
@@ -119,13 +121,14 @@ export default function Offers() {
     // Call API update Offer
     const updateOffer = async (offer: Offer) => {
         // if offer details are empty, return
+        const token = localStorage.getItem("token");
         if (!offer.name || !offer.type || !offer.code || !offer.value) {
             toast.error('Name, Type, Value & Code are required to update an Offer');
             return;
         }
         const options = {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json','x-access-token': token||"" },
             body: JSON.stringify(offer)
         };
 
@@ -148,9 +151,10 @@ export default function Offers() {
     // Activate Offer
     const activateOffer = async (id: number) => {
         if (!confirm('Are you sure you want to restore and activate this Offer?')) return; // confirm
+        const token = localStorage.getItem("token");
         const options = {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json','x-access-token': token||"" },
         };
         // Call API to restore Offer
         const response = await fetch(`/api/offer/activate/${id}/`, options);
@@ -166,10 +170,11 @@ export default function Offers() {
 
     // Deactivate Offer
     const deactivateOffer = async (id: number) => {
+        const token = localStorage.getItem("token");
         if (!confirm('Are you sure you want to deactivate this Offer?')) return; // confirm
         const options = {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json','x-access-token': token||"" },
         };
 
         const response = await fetch(`/api/offer/deactivate/${id}/`, options);
@@ -185,10 +190,11 @@ export default function Offers() {
 
     // Delete Offer
     const deleteOffer = async (id: number) => {
+        const token = localStorage.getItem("token");
         if (!confirm('Are you sure you want to delete this Offer?')) return; // confirm
         const options = {
             method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json','x-access-token': token||"" },
         };
 
         const response = await fetch(`/api/offer/${id}/`, options);
@@ -204,10 +210,11 @@ export default function Offers() {
 
     // Restore Offer
     const restoreOffer = async (id: number) => {
+        const token = localStorage.getItem("token");
         if (!confirm('Are you sure you want to restore this Offer?')) return; // confirm
         const options = {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json','x-access-token': token||"" },
         };
         // Call API to restore Offer
         const response = await fetch(`/api/offer/restore/${id}/`, options);

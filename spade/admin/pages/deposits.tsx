@@ -118,7 +118,7 @@ export default function Deposits() {
         if (!confirm) return
         const options = {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json','x-access-token': token || "" },
         };
         const body = JSON.stringify({ status: 'rejected', remark });
         const response = await fetch(`/api/deposit/${id}/`, { ...options, body });
