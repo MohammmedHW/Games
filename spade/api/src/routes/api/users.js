@@ -167,91 +167,91 @@ res.status(200).json({
 // -------
 
 router
-  .get("/otp", query("phoneNumber").isMobilePhone('en-IN'), async function (req, res) {
-    try {
-      const errors = validationResult(req);
-      console.log("OTP route validation errors:", errors.array());
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
-      const { phoneNumber } = req.query;
-      console.log("OTP request for phone number:", phoneNumber);
+  // .get("/otp", query("phoneNumber").isMobilePhone('en-IN'), async function (req, res) {
+  //   try {
+  //     const errors = validationResult(req);
+  //     console.log("OTP route validation errors:", errors.array());
+  //     if (!errors.isEmpty()) {
+  //       return res.status(400).json({ errors: errors.array() });
+  //     }
+  //     const { phoneNumber } = req.query;
+  //     console.log("OTP request for phone number:", phoneNumber);
 
-      // We are caching the otp sent count for a particular phone number to avoid spamming
-      const key = `otpSend${phoneNumber}`;
-      const otpSentCount = cachedData.get(key);
-      console.log("OTP send count from cache:", otpSentCount);
+  //     // We are caching the otp sent count for a particular phone number to avoid spamming
+  //     const key = `otpSend${phoneNumber}`;
+  //     const otpSentCount = cachedData.get(key);
+  //     console.log("OTP send count from cache:", otpSentCount);
 
-      if (otpSentCount && otpSentCount >= 5) {
-        return res.status(400).send("otp limit reached. try again after after 30 minutes");
-      }
+  //     if (otpSentCount && otpSentCount >= 5) {
+  //       return res.status(400).send("otp limit reached. try again after after 30 minutes");
+  //     }
 
-      // get user by phone number and check if he is banned
-      const user = await USER.findOne({
-        where: {
-          phone: phoneNumber,
-          // check if is_banned or is_deleted is true
-          [Op.or]: [{ is_banned: true }, { is_deleted: true }],
-        },
-      });
-      if (user) return res.status(400).send("You're banned from using our services due to suspicious activity. Please contact support for more details.");
+  //     // get user by phone number and check if he is banned
+  //     const user = await USER.findOne({
+  //       where: {
+  //         phone: phoneNumber,
+  //         // check if is_banned or is_deleted is true
+  //         [Op.or]: [{ is_banned: true }, { is_deleted: true }],
+  //       },
+  //     });
+  //     if (user) return res.status(400).send("You're banned from using our services due to suspicious activity. Please contact support for more details.");
 
-      // check if otp exists for this phone number where createdAt is less than 60 seconds
-      const lastOTP = await OTP.findOne({
-        where: {
-          phone_number: phoneNumber,
-          is_active: true,
-          createdAt: {
-            [Op.gt]: new Date(new Date() - 60 * 1000),
-          },
-        },
-        order: [["createdAt", "DESC"]],
-      });
-      if (lastOTP) {
-        const otpTime = lastOTP.createdAt.getTime();
-        const secs = timeDiffinSecs(otpTime);
-        if (secs < 60) {
-          return res.status(400).send({
-            timePending: 60 - secs,
-            // otp: null,
-          });
-        }
-      }
-      const otp = generateOtp();
+  //     // check if otp exists for this phone number where createdAt is less than 60 seconds
+  //     const lastOTP = await OTP.findOne({
+  //       where: {
+  //         phone_number: phoneNumber,
+  //         is_active: true,
+  //         createdAt: {
+  //           [Op.gt]: new Date(new Date() - 60 * 1000),
+  //         },
+  //       },
+  //       order: [["createdAt", "DESC"]],
+  //     });
+  //     if (lastOTP) {
+  //       const otpTime = lastOTP.createdAt.getTime();
+  //       const secs = timeDiffinSecs(otpTime);
+  //       if (secs < 60) {
+  //         return res.status(400).send({
+  //           timePending: 60 - secs,
+  //           // otp: null,
+  //         });
+  //       }
+  //     }
+  //     const otp = generateOtp();
      
 
-      // console.log("otp", otp);
+  //     // console.log("otp", otp);
 
-      // Send OTP to user via SMS
-      const smsResponse = await axios.get(`${config.smsApiUrl}?authorization=${config.smsApiKey}&variables_values=${otp}&route=otp&numbers=${phoneNumber}`);
-      if (smsResponse.status !== 200) {
-        sendTelegramMessageAdmin("URGENT: Error sending SMS. Please check SMS credits at https://www.fast2sms.com/dashboard/ Add credits asap to get SMS and OTP's working. Once recharged, SMS will start working again automatically.");
-        return res.status(400).send("Error sending SMS. Please try again later");
-      }
+  //     // Send OTP to user via SMS
+  //     const smsResponse = await axios.get(`${config.smsApiUrl}?authorization=${config.smsApiKey}&variables_values=${otp}&route=otp&numbers=${phoneNumber}`);
+  //     if (smsResponse.status !== 200) {
+  //       sendTelegramMessageAdmin("URGENT: Error sending SMS. Please check SMS credits at https://www.fast2sms.com/dashboard/ Add credits asap to get SMS and OTP's working. Once recharged, SMS will start working again automatically.");
+  //       return res.status(400).send("Error sending SMS. Please try again later");
+  //     }
 
-      // Save OTP to DB for future reference
-      await OTP.create({
-        otp,
-        is_active: true,
-        phone_number: phoneNumber,
-        is_used: false,
-      });
+  //     // Save OTP to DB for future reference
+  //     await OTP.create({
+  //       otp,
+  //       is_active: true,
+  //       phone_number: phoneNumber,
+  //       is_used: false,
+  //     });
 
-      // Increment otp sent count for this phone number in cache to avoid spamming
-      if (!otpSentCount) cachedData.set(key, 1);
-      else cachedData.set(key, otpSentCount + 1);
+  //     // Increment otp sent count for this phone number in cache to avoid spamming
+  //     if (!otpSentCount) cachedData.set(key, 1);
+  //     else cachedData.set(key, otpSentCount + 1);
 
-      // res.status(200).send({ otp });
-      return res.status(200).send(true);
-    } catch (error) {
-      logger.error(`users.otp.get: ${error}`);
-      res.status(400).send("Request Failed");
-    }
-  })
+  //     // res.status(200).send({ otp });
+  //     return res.status(200).send(true);
+  //   } catch (error) {
+  //     logger.error(`users.otp.get: ${error}`);
+  //     res.status(400).send("Request Failed");
+  //   }
+  // })
   .post(
     "/signup",
     body("password").isString().trim().escape().isLength({ min: 8, max: 40 }), // escaping and trimming password for security reasons
-    body("phoneNumber").trim().escape().isMobilePhone('en-IN'), // escaping and trimming phoneNumber for security reasons
+    body("phoneNumber").trim().escape().isLength({ min: 10, max: 10 }).isNumeric(), // escaping and trimming phoneNumber for security reasons
     body("confirmPassword")
       .isString()
       .trim()
@@ -262,26 +262,29 @@ router
         }
         return true;
       }),
-    body("otp").isString().isLength({ min: 4, max: 6 }),
+    // body("otp").isString().isLength({ min: 4, max: 6 }),
     body("name").optional().isString().trim().escape().isLength({ min: 3, max: 120 }),// optional name
+    
     async function (req, res) {
+      console.log("Request body:", req.body);
       try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
+          console.log(errors.array());
           return res.status(400).json({ errors: errors.array() });
         }
-        const { phoneNumber, otp, password, name = "" } = req.body;
+        const { phoneNumber, password, name = "" } = req.body;  //otp removed
 
         const ip =
           req.headers["x-forwarded-for"]?.split(",")[0] ||
           req.headers["x-forwarded-for"] ||
           req.ip;
 
-        const key = `otpError${ip}`;
-        const errorCount = cachedData.get(key);
-        if (errorCount && errorCount >= 5) {
-          return res.status(400).send("try again after after 30 minutes");
-        }
+        // const key = `otpError${ip}`;
+        // const errorCount = cachedData.get(key);
+        // if (errorCount && errorCount >= 5) {
+        //   return res.status(400).send("try again after after 30 minutes");
+        // }
         // check if user already exists with that phone number
         const user = await USER.findOne({
           where: { phone: phoneNumber },
@@ -289,36 +292,36 @@ router
         if (user) return res.status(400).send("User with this phone number already exists");
 
         // check if otp exists for this phone number where createdAt is less than 5 minutes. otp send time is 60 seconds but we are giving 5 mins to user to enter otp
-        const lastOTP = await OTP.findOne({
-          where: {
-            phone_number: phoneNumber,
-            is_active: true,
-            createdAt: {
-              [Op.gt]: new Date(new Date() - 300 * 1000),
-            },
-          },
-          order: [["createdAt", "DESC"]],
-        });
-        if (lastOTP?.otp != otp) {
-          if (!errorCount) cachedData.set(key, 1);
-          else cachedData.set(key, errorCount + 1);
-          return res.status(400).send("OTP error");
-        }
-        const otpTime = lastOTP.createdAt.getTime();
-        // const mins = timeDiffinMins(otpTime);
-        const secs = timeDiffinSecs(otpTime);
-        if (secs > 300) { // 5 mins
-          return res.status(400).send(`Otp expired`);
-        }
+        // const lastOTP = await OTP.findOne({
+        //   where: {
+        //     phone_number: phoneNumber,
+        //     is_active: true,
+        //     createdAt: {
+        //       [Op.gt]: new Date(new Date() - 300 * 1000),
+        //     },
+        //   },
+        //   order: [["createdAt", "DESC"]],
+        // });
+        // if (lastOTP?.otp != otp) {
+        //   if (!errorCount) cachedData.set(key, 1);
+        //   else cachedData.set(key, errorCount + 1);
+        //   return res.status(400).send("OTP error");
+        // }
+        // const otpTime = lastOTP.createdAt.getTime();
+        // // const mins = timeDiffinMins(otpTime);
+        // const secs = timeDiffinSecs(otpTime);
+        // if (secs > 300) { // 5 mins
+        //   return res.status(400).send(`Otp expired`);
+        // }
 
         // Otp verified, now create user
 
         // first delete all otp's for this phone number as they are no longer needed
-        await OTP.destroy({
-          where: {
-            phone_number: phoneNumber,
-          },
-        });
+        // await OTP.destroy({
+        //   where: {
+        //     phone_number: phoneNumber,
+        //   },
+        // });
 
         const hash = await encrypt(password);
 
@@ -375,6 +378,7 @@ router
         }
         return res.status(200).send(true);
       } catch (error) {
+        console.log("SIGNUP ERROR >>>", error);  // Add this
         logger.error(`users.signup.post: ${error}`);
         res.status(400).send("Request Failed");
       }

@@ -309,7 +309,7 @@ const [loadingUser, setLoadingUser] = useState(true);
     logout,
     login,
     loadingUser,
-    setToken, // ✅ now accessible via useContext
+    setToken, 
   setUser
   };
 

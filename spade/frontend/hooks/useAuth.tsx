@@ -114,7 +114,7 @@ const login = async ({
   const signup = async (data: {
     password: string;
     confirmPassword: string;
-    otp: string;
+   // otp: string;
     phoneNumber: string;
   }) => {
     try {
@@ -141,9 +141,11 @@ const login = async ({
           }
           toast.error(err.message);
           // setError(err.message);
+
         });
     } catch (error) {
       console.log(error);
+
     }
   };
 
@@ -197,7 +199,7 @@ const login = async ({
   const changePassword = async (data: {
     password: string;
     confirmPassword: string;
-    otp: string;
+    //otp: string;
     phoneNumber: string;
   }) => {
     try {
@@ -236,7 +238,7 @@ const login = async ({
     login,
     signup,
     logout,
-    getOtp,
+   // getOtp,
     changePassword,
   };
 }
