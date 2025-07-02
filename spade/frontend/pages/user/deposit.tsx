@@ -112,9 +112,10 @@ export default function Deposit() {
     const fetchBankAccounts = async () => {
         const limit = 20;
         const skip = 0;
+        const token = localStorage.getItem("token");
         const options = {
             method: 'GET',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json','x-access-token': token || ""},
         };
 
         const response = await fetch(`/api/bankAccounts?limit=${limit}&skip=${skip}&search=`, options);
@@ -139,9 +140,10 @@ export default function Deposit() {
     const fetchOffers = async () => {
         const limit = 20;
         const skip = 0;
+        const token = localStorage.getItem("token");
         const options = {
             method: 'GET',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json','x-access-token': token || "" },
         };
 
         const response = await fetch(`/api/offer?limit=${limit}&skip=${skip}&isActive=true&isValid=true&filter=deposit`, options);
@@ -161,9 +163,10 @@ export default function Deposit() {
     // handle deposit form submit
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+        const token = localStorage.getItem("token");
         const options = {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json','x-access-token': token || "" },
             body: JSON.stringify(deposit)
         };
 

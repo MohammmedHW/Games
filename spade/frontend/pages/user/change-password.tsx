@@ -20,9 +20,10 @@ export default function ChangePassword() {
       toast.error("New password and confirm password do not match");
       return;
     }
+    const token = localStorage.getItem("token");
     const options = {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json",'x-access-token':token || "" },
       body: JSON.stringify({
         oldPassword: password.old,
         newPassword: password.new,
@@ -45,9 +46,10 @@ export default function ChangePassword() {
 
   const handleProfileUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const token = localStorage.getItem("token")
     const options = {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json",'x-access-token' : token || "" },
       body: JSON.stringify(
         (() => {
           const data: Record<string, any> = {};
