@@ -188,9 +188,9 @@ export default (sequelize, DataTypes) => {
       email: { 
         type: DataTypes.STRING, 
         defaultValue: "",
-        validate: {
-          isEmail: true
-        }
+        // validate: {
+        //   isEmail: true
+        // }
       },
       password: DataTypes.STRING,
       is_superuser: { type: DataTypes.BOOLEAN, defaultValue: false },

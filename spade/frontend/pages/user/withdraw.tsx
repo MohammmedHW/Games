@@ -112,10 +112,10 @@ export default function Withdraw() {
       toast.error("Account number and confirm account number don't match")
       return;
     }
-
+    const token = localStorage.getItem("token");
     const options = {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json','x-access-token': token || "" },
       body: JSON.stringify(withdraw)
     };
 

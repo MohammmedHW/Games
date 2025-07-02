@@ -30,9 +30,10 @@ export default function Transactions() {
     const fetchDeposits = async () => {
         const limit = 20;
         const skip = page > 1 ? (page - 1) * 20 : 0;
+        const token = localStorage.getItem("token");
         const options = {
             method: 'GET',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json','x-access-token':token || ""},
         };
 
         const response = await fetch(`/api/deposit?limit=${limit}&skip=${skip}&filter=`, options);
@@ -54,9 +55,10 @@ export default function Transactions() {
     const fetchWithdrawals = async () => {
         const limit = 20;
         const skip = page > 1 ? (page - 1) * 20 : 0;
+        const token = localStorage.getItem("token");
         const options = {
             method: 'GET',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json','x-access-token':token || "" },
         };
 
         const response = await fetch(`/api/withdraw?limit=${limit}&skip=${skip}&filter=`, options);
