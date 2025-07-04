@@ -241,11 +241,11 @@ export default function useAuth() {
         process.env.NODE_ENV === "development"
           ? "http://localhost:3001/api/users/admin/login"
           : "/api/users/admin/login";
-
+      const token = localStorage.getItem("token")
       const response = await axios.post(
         apiUrl,
         { username, password },
-        { headers: { "Content-Type": "application/json" } }
+        { headers: { "Content-Type": "application/json" ,'x-access-token': token || ""} }
       );
 
       toast.success("Logged in successfully!");

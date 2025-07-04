@@ -14,30 +14,60 @@ const router = express.Router();
 
 router
   // Public route: Get all site settings
+  // .get("/", async function (req, res) {
+  //   try {
+  //     // get all site settings where 'key' is colors, notices, banners
+  //     const site = await SITE.findAll({
+  //       order: [["key", "ASC"]],
+  //       where: {
+  //         key: {
+  //           [Op.in]: ["colors", "notices", "banners", "signup_bonus", "whatsapp_number"],
+  //         },
+  //       },
+  //     });
+  //     // send data in the format { colors: {}, notices: {}, banners: [] }
+  //     res.status(200).json({
+  //       banners: JSON.parse(site[0].value),
+  //       colors: JSON.parse(site[1].value),
+  //       notices: JSON.parse(site[2].value),
+  //       signup_bonus: JSON.parse(site[3].value),
+  //       whatsapp_number: JSON.parse(site[4].value),
+  //     });
+  //   } catch (error) {
+  //     logger.error(error);
+  //     console.log("Helllooooo")
+  //     res.status(400).send("Request Failed");
+  //   }
+  // })
   .get("/", async function (req, res) {
-    try {
-      // get all site settings where 'key' is colors, notices, banners
-      const site = await SITE.findAll({
-        order: [["key", "ASC"]],
-        where: {
-          key: {
-            [Op.in]: ["colors", "notices", "banners", "signup_bonus", "whatsapp_number"],
-          },
+  try {
+    const site = await SITE.findAll({
+      order: [["key", "ASC"]],
+      where: {
+        key: {
+          [Op.in]: ["colors", "notices", "banners", "signup_bonus", "whatsapp_number"],
         },
-      });
-      // send data in the format { colors: {}, notices: {}, banners: [] }
-      res.status(200).json({
-        banners: JSON.parse(site[0].value),
-        colors: JSON.parse(site[1].value),
-        notices: JSON.parse(site[2].value),
-        signup_bonus: JSON.parse(site[3].value),
-        whatsapp_number: JSON.parse(site[4].value),
-      });
-    } catch (error) {
-      logger.error(error);
-      res.status(400).send("Request Failed");
-    }
-  })
+      },
+    });
+
+    // convert array to object: { colors: "{}", notices: "{}", ... }
+    const siteObj = {};
+    site.forEach(setting => {
+      siteObj[setting.key] = JSON.parse(setting.value);
+    });
+
+    res.status(200).json({
+      banners: siteObj.banners || [],
+      colors: siteObj.colors || {},
+      notices: siteObj.notices || {},
+      signup_bonus: siteObj.signup_bonus || 0,
+      whatsapp_number: siteObj.whatsapp_number || "",
+    });
+  } catch (error) {
+    logger.error("Settings fetch error:", error);
+    res.status(400).send("Request Failed");
+  }
+})
   // Authenticated route. only admin can access this route and update site settings
   .post(
     "/",
@@ -91,6 +121,7 @@ router
         res.status(200).send(true);
       } catch (error) {
         logger.error(error);
+        console.log("hiiii")
         res.status(400).send("Request Failed");
       }
     }

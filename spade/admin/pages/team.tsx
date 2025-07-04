@@ -1726,7 +1726,7 @@ export default function Team() {
                         required
                       >
                         <option value="subadmin">User</option>
-                        <option value="agent">Agent</option>
+                        <option value="agent">Agent</option> 
                       </select>
                       <p className="text-white/60 text-sm mt-1">
                         {modalUser.role === "agent"

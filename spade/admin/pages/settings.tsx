@@ -81,23 +81,60 @@ export default function Settings() {
         })
     }
 
-    const getSettings = async () => {
-        const response = await fetch('/api/site/');
-        if (response.status === 200) {
-            const data = await response.json();
-            if (response.status === 200) {
-                setSettings(data)
-            }
-        } else {
-            toast.error(await response.text());
-        }
-    }
+    // const getSettings = async () => {
+    //     const response = await fetch('/api/site/');
+    //     if (response.status === 200) {
+    //         const data = await response.json();
+    //         if (response.status === 200) {
+    //             setSettings(data)
+    //         }
+    //     } else {
+    //         toast.error(await response.text());
+    //     }
+    // }
+const getSettings = async () => {
+    const token = localStorage.getItem("token");
+    console.log("Token being sent:", token); // 👈 Add this
 
+    const response = await fetch('http://localhost:3005/api/site/', {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'x-access-token': token || "",  // or try: Authorization: Bearer ${token}
+        },
+    });
+
+    // if (response.status === 200) {
+    //     const data = await response.json();
+    //     setSettings(data);
+    // }
+    if (response.status === 200) {
+    const data = await response.json();
+
+    // Ensure notices.loggedIn and loggedOut have default structure
+    const safeData = {
+        ...data,
+        notices: {
+            loggedIn: { text: data?.notices?.loggedIn?.text || "" },
+            loggedOut: { text: data?.notices?.loggedOut?.text || "" },
+        },
+    };
+
+    setSettings(safeData);
+}
+
+    else {
+        const errorText = await response.text();
+        console.error("Settings fetch failed:", errorText); 
+        toast.error(errorText);
+    }
+};
     const saveSettings = async () => {
         setIsSaving(true)
+        const token = localStorage.getItem("token");
         const options = {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json','x-access-token': token || "" },
             body: JSON.stringify(settings)
         };
 
@@ -116,9 +153,10 @@ export default function Settings() {
 
     const getAllUsers = async () => {
         setLoadingUsers(true)
+        const token = localStorage.getItem("token");
         const options = {
             method: 'GET',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json','x-access-token': token || "" },
         };
 
         const response = await fetch(`/api/team/users?limit=${10000000}&skip=${0}&search=&download=${true}`, options);
