@@ -30,9 +30,10 @@ export default function Logs() {
         setLoading(true);
         const limit = 80;
         const skip = page > 1 ? (page - 1) * 80 : 0;
+        const token = localStorage.getItem("token");
         const options = {
             method: 'GET',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json','x-access-token': token || "" },
         };
 
         const response = await fetch(`/api/team/logs?limit=${limit}&skip=${skip}&type=${type}`, options);
