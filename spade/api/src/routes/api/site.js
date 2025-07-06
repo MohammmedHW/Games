@@ -121,7 +121,6 @@ router
         res.status(200).send(true);
       } catch (error) {
         logger.error(error);
-        console.log("hiiii")
         res.status(400).send("Request Failed");
       }
     }

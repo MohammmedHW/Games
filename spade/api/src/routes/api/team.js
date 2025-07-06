@@ -371,7 +371,7 @@
 
 //     async function (req, res) {
 //       try {
-//         res.setHeader("Cache-Control", "no-store"); // ✅ Prevent caching
+//         res.setHeader("Cache-Control", "no-store"); 
 
 //         if (req.user.role !== "admin" && req.user.role !== "subadmin") {
 //           console.log("Unauthorized user");
@@ -558,14 +558,12 @@
 //   //         return res.status(400).json({ errors: errors.array() });
 //   //       }
 
-//   //       // ✅ Parse query safely
 //   //       const limit = parseInt(req.query.limit) || 20;
 //   //       const skip = parseInt(req.query.skip) || 0;
 //   //       const search = req.query.search || '';
 //   //       const user_id = parseInt(req.query.user) || 0;
 //   //       const download = req.query.download === 'true' || req.query.download === true;
 
-//   //       console.log("✅ Parsed Params ->", { limit, skip, search, user_id, download });
 
 //   //       let users;
 //   //       const include = !download
@@ -581,13 +579,11 @@
 
 //   //       if (req.user.role === "admin") {
 //   //         if (user_id > 0) {
-//   //           console.log(`🔎 Fetching specific user_id = ${user_id}`);
 //   //           users = await USER.findAll({
 //   //             where: { id: user_id, role: "", is_deleted: false },
 //   //             include,
 //   //           });
 //   //         } else {
-//   //           console.log(`📋 Fetching user list with search = "${search}"`);
 //   //           users = await USER.findAll({
 //   //             order: [["id", "DESC"]],
 //   //             where: {
@@ -605,7 +601,6 @@
 //   //           });
 //   //         }
 //   //       } else if (req.user.role === "subadmin") {
-//   //         console.log(`👮 Subadmin fetching users`);
 //   //         users = await USER.findAll({
 //   //           order: [["id", "DESC"]],
 //   //           where: {
@@ -679,7 +674,6 @@
 
 //   //       return res.status(200).send(result);
 //   //     } catch (error) {
-//   //       console.error("🔥 team.users.get ERROR:", error);
 //   //       return res.status(400).send("Request Failed");
 //   //     }
 //   //   }
@@ -995,7 +989,6 @@
 
 //         // if no user found, bail
 //         if (!user) {
-//           console.log("hi45");
 //           res.status(400);
 //           return res.send("user not found");
 //         }
@@ -1102,7 +1095,6 @@
 //   //     }
 //   //     if (!user) {
 //   //       res.status(400);
-//   //       console.log("hi");
 //   //       return res.send("User not found");
 //   //     }
 
@@ -1156,7 +1148,6 @@
 //     }
 
 //     if (!user) {
-//       console.log("hi");
 //       return res.status(400).send("User not found");
 //     }
 
@@ -1437,7 +1428,6 @@
 //         });
 //       }
 //       if (!user) {
-//         console.log("hi56465");
 //         return res.status(400).send("User not found");
 //       }
 //       if (req.user.id === user.id) {
@@ -1849,7 +1839,6 @@ router
             offset: skip,
             include,
           });
-          //console.log(users)
         }
 
         if (download) {
@@ -2185,7 +2174,6 @@ router
     }
 
     if (!user) {
-      console.log("hi");
       return res.status(400).send("User not found");
     }
 
@@ -2314,8 +2302,7 @@ router
 //           access,
 //           // is_superuser, // update this directly from db
 //         } = req.body;
-//         console.log("🚀 ~ Role received in request body:", role);
-//       console.log("🚀 ~ Full req.body:", req.body);
+//     
 //         // if req user is not admin, but trying to add admin, change role to subadmin
 //         // if (req.user.role !== "admin" && role === "admin") {
 //         //   role = "subadmin";
@@ -2405,7 +2392,6 @@ router
         access,
       } = req.body;
 
-      console.log("🚀 ~ Role received in request body:", role);
 
       if (req.user.role === "subadmin") {
         const allowedRolesForSubadmin = ["agent", "user"];
@@ -2500,7 +2486,7 @@ router
   //         });
   //       }
   //       if (!user) {
-  //         console.log("hi465");
+  //       
   //         return res.status(400).send("user not found");
   //       }
 
@@ -2661,7 +2647,6 @@ router
         });
       }
       if (!user) {
-        console.log("hi56465");
         return res.status(400).send("User not found");
       }
       if (req.user.id === user.id) {

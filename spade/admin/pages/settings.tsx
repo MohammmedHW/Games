@@ -94,7 +94,6 @@ export default function Settings() {
     // }
 const getSettings = async () => {
     const token = localStorage.getItem("token");
-    console.log("Token being sent:", token); // 👈 Add this
 
     const response = await fetch('http://localhost:3005/api/site/', {
         method: 'GET',

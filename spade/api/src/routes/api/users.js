@@ -445,7 +445,6 @@ console.log("Password from DB:", user.password);
       await user.update({ is_active: true, last_login: new Date(), ip });
 
       const token = await generateToken(user);
-      console.log("Generated token:", token);
 
       res.cookie("token", token, {
         maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
@@ -524,7 +523,7 @@ console.log("Password from DB:", user.password);
           },
         });
         if (!user || user.is_banned) {
-          console.log("hi");
+         
           return res.status(400).send("User not found");
         }
         const lastOTP = await OTP.findOne({

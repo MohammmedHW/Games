@@ -161,7 +161,6 @@
 // // });
 //       setUser(res.data);
 //     } catch (err: any) {
-//       console.log("⚠️ Error in fetchProfile:", err.response);
 //       if (err.response?.status === 401 || err.response?.status === 400) logout();
 //     }
 //   }

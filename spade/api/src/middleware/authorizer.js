@@ -69,22 +69,18 @@
 // export default async (req, res, next) => {
 //   try {
 //     const token = req.cookies.token || req.headers["x-access-token"];
-//     console.log("🔐 Token from request:", token);
 
 //     if (!token) {
-//       console.log("⛔ No token provided in cookie or x-access-token");
 //       return res.sendStatus(400);
 //     }
 
 //     const user = await findUserByToken(token);
 //     if (!user) {
-//       console.log("⛔ Invalid token or user not found");
 //       res.clearCookie("token");
 //       return res.status(401).send("authentication error");
 //     }
 
 //     if (user.is_banned || user.is_deleted) {
-//       console.log("⛔ User is banned or deleted");
 //       logger.warn(`user is banned: ${user.id}`);
 //       res.clearCookie("token");
 //       return res.status(403).send("user is banned");

@@ -1365,7 +1365,6 @@ export default function Team() {
       };
 
       const response = await makeRequest("/team/", "POST", body);
-      console.log("📤 Sending role to backend:", user.role);
 
       setTeam([response.user, ...team]);
       setShowTeamModal(false);

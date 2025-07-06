@@ -29,7 +29,6 @@ const Header = () => {
   useEffect(() => {
     getActivePage();
   }, [router.pathname]);
-  console.log("Current user role:", user?.role);
   
   
   const {loadingUser } = useContext(UserStore);
