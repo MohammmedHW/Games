@@ -52,9 +52,10 @@ export default function BankAccounts() {
         setLoading(true);
         const limit = 20;
         const skip = page > 1 ? (page - 1) * 20 : 0;
+        const token = localStorage.getItem("token");
         const options = {
             method: 'GET',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json','x-access-token': token || "" },
         };
 
         const response = await fetch(`/api/bankAccounts?limit=${limit}&skip=${skip}&search=${search}`, options);
@@ -90,9 +91,10 @@ export default function BankAccounts() {
             toast.error('All fields are required to add a bank account');
             return;
         }
+        const token = localStorage.getItem("token");
         const options = {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json','x-access-token': token || "" },
             body: JSON.stringify({
                 ifsc: bank.ifsc,
                 name: bank.name,
@@ -141,9 +143,10 @@ export default function BankAccounts() {
             min_amount: bank.min_amount,
             max_amount: bank.max_amount,
         }
+        const token = localStorage.getItem("token");
         const options = {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json','x-access-token': token || "" },
             body: JSON.stringify(body)
         };
 
@@ -165,9 +168,10 @@ export default function BankAccounts() {
 
     const restoreBankAccount = async (id: number) => {
         if (!confirm('Are you sure you want to restore and activate this bank account?')) return; // confirm
+        const token = localStorage.getItem("token");
         const options = {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json','x-access-token': token || "" },
         };
         // Call API to restore BankAccount
         const response = await fetch(`/api/bankAccounts/${id}/restore/`, options)
@@ -184,9 +188,10 @@ export default function BankAccounts() {
     // Call API to delete BankAccount
     const deleteBankAccount = async (id: number) => {
         if (!confirm('Are you sure you want to delete this bank account?')) return; // confirm
+        const token = localStorage.getItem("token");
         const options = {
             method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json','x-access-token': token || "" },
         };
 
         const response = await fetch(`/api/bankAccounts/${id}/`, options)
