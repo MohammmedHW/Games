@@ -91,9 +91,10 @@ export default function BetList() {
     setLoading(true);
     const limit = 120;
     const skip = page > 1 ? (page - 1) * limit : 0;
+    const token = localStorage.getItem("token");
     const options = {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json','x-access-token':token || "" },
     };
 
     const response = await fetch(`/api/bets?limit=${limit}&skip=${skip}&status=${status}&user=${router.query.user || 0}&category=${category}`, options);
@@ -113,9 +114,10 @@ export default function BetList() {
   };
 
   const fetchUserBetStats = async () => {
+    const token = localStorage.getItem("token");
     const options = {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json','x-access-token':token || "" },
     };
 
     const response = await fetch(`/api/bets/stats?user=${router.query.user || 0}`, options);
@@ -134,9 +136,10 @@ export default function BetList() {
 
 
   const getFawkMarketResult = async (market: string) => {
+    const token = localStorage.getItem("token");
     const options = {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json','x-access-token':token || "" },
     };
 
     const response = await fetch(`/api/poker/results?market=${market}`, options);
@@ -161,9 +164,10 @@ export default function BetList() {
       return;
     }
     if (!window.confirm(`Are you sure you want to mark this bet as ${modalBetStatus}? User will be automatically credited/debited accordingly`)) return;
+    const token = localStorage.getItem("token");
     const options = {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json','x-access-token':token || "" },
       body: JSON.stringify({ id: bet.id, status: modalBetStatus, amount: modalBetAmount }),
     };
 
