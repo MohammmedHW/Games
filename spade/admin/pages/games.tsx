@@ -60,9 +60,10 @@ export default function Games() {
         setLoading(true);
         const limit = 40;
         const skip = page > 1 ? (page - 1) * 40 : 0;
+        const token = localStorage.getItem("token");
         const options = {
             method: 'GET',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json','x-access-token': token || "" },
         };
 
         const response = await fetch(`/api/game?limit=${limit}&skip=${skip}&search=${search}${showEnabled ? '&enabled=' + showEnabled : ''}${provider ? '&provider=' + provider : ''}`, options);
@@ -83,9 +84,10 @@ export default function Games() {
     }
 
     const fetchGameProviders = async () => {
+        const token = localStorage.getItem("token");
         const options = {
             method: 'GET',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json','x-access-token': token || "" },
         };
 
         const response = await fetch(`/api/game/providers/`, options); // pass ?enabled=true to get only enabled providers
@@ -122,9 +124,10 @@ export default function Games() {
             toast.error('Name, API, Provider & Code are required to add an Game');
             return;
         }
+        const token = localStorage.getItem("token");
         const options = {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json','x-access-token': token || "" },
             body: JSON.stringify(game)
         };
 
@@ -146,9 +149,10 @@ export default function Games() {
             toast.error('Name, API, Provider & Code are required to update a Game');
             return;
         }
+        const token = localStorage.getItem("token");
         const options = {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json','x-access-token': token || "" },
             body: JSON.stringify(game)
         };
 
@@ -177,9 +181,10 @@ export default function Games() {
                 [key]: value
             }
         }
+        const token = localStorage.getItem("token");
         const options = {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json','x-access-token': token || "" },
             body: JSON.stringify(body)
         };
         // Call API to restore Game
@@ -200,9 +205,10 @@ export default function Games() {
 
     // Call API to change Game Order. Order will be +1 or -1
     const updateGameKeyOrder = async (id: number, order: number) => {
+        const token = localStorage.getItem("token");
         const options = {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json','x-access-token': token || "" },
             body: JSON.stringify({
                 id: id,
                 order: order
@@ -237,10 +243,11 @@ export default function Games() {
 
     // Reset Games
     const resetGames = async () => {
-        if (!confirm('Are you sure you want to reset all games?')) return; // confirm
+        if (!confirm('Are you sure you want to reset all games?')) return;
+        const token = localStorage.getItem("token"); // confirm
         const options = {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json','x-access-token': token || "" },
         };
 
         const response = await fetch(`/api/game/reset/`, options);
@@ -256,9 +263,10 @@ export default function Games() {
     // Delete Game
     const deleteGame = async (id: number) => {
         if (!confirm('Are you sure you want to delete this Game?')) return; // confirm
+        const token = localStorage.getItem("token");
         const options = {
             method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json','x-access-token': token || "" },
         };
 
         const response = await fetch(`/api/game/${id}/`, options);
