@@ -5,12 +5,14 @@ const nextConfig = {
   images: {
     minimumCacheTTL: 3600,
   },
-  // trailingSlash: true, // fawk api requires trailing slash in url
-  skipTrailingSlashRedirect: true, // dont redirect to trailing slash, accept both with and without trailing slash
+  skipTrailingSlashRedirect: true,
+  experimental: {
+    esmExternals: "loose", // Add this to fix tailwind-scrollbar-hide error
+    appDir: true, // Recommended for Next.js 13+
+  },
   env: {
     API_URL: process.env.API_URL,
   },
-  // API Proxy to Backend. Read: https://nextjs.org/docs/api-reference/next.config.js/rewrites
   async rewrites() {
     return [
       {
@@ -18,6 +20,20 @@ const nextConfig = {
         destination: `${process.env.API_URL}/api/:path*`,
       },
     ];
+  },
+  // Add these compiler options to suppress hydration warnings
+  compiler: {
+    styledComponents: true,
+    removeConsole: process.env.NODE_ENV === "production", // Remove console.log in production
+  },
+  // Enable modularizeImports for better bundle size
+  modularizeImports: {
+    "@headlessui/react": {
+      transform: "@headlessui/react/{{member}}",
+    },
+    "react-icons": {
+      transform: "react-icons/{{member}}",
+    },
   },
 };
 

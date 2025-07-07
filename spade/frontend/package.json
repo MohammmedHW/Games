@@ -31,7 +31,7 @@
     "react-toastify": "^9.1.3",
     "sharp": "^0.32.1",
     "slick-carousel": "^1.8.1",
-    "tailwind-scrollbar-hide": "^1.1.7",
+    "tailwind-scrollbar-hide": "^4.0.0",
     "typescript": "^5.0.4",
     "zod": "^3.21.4"
   },

@@ -30,7 +30,9 @@ const Header = () => {
 
   const searchGames = (search: string) => {
     // search in gamesList.games
-    const games = gamesList.games.filter((game) => game.name.toLowerCase().includes(search.toLowerCase()));
+    const games = gamesList.games.filter((game) =>
+      game.name.toLowerCase().includes(search.toLowerCase())
+    );
     setSearchResults(games);
   };
 
@@ -43,7 +45,7 @@ const Header = () => {
 
   return (
     <div className="z-2">
-      {(siteContext.notices.loggedIn.text && isLoggedIn) && (
+      {siteContext.notices?.loggedIn?.text && isLoggedIn && (
         <Marquee
           gradient={false}
           speed={40}
@@ -54,7 +56,7 @@ const Header = () => {
           </p>
         </Marquee>
       )}
-      {(siteContext.notices.loggedOut.text && !isLoggedIn) && (
+      {siteContext.notices?.loggedOut?.text && !isLoggedIn && (
         <Marquee
           gradient={false}
           speed={40}
@@ -71,9 +73,7 @@ const Header = () => {
           {showSearch && (
             <>
               <div className="absolute top-0 left-0 w-full h-full bg-primary z-10 flex items-center justify-center sm:hidden">
-                <BsSearch
-                  className="text-xl sm:text-base text-white/70 sm:text-black/50 z-1 -mr-10"
-                />
+                <BsSearch className="text-xl sm:text-base text-white/70 sm:text-black/50 z-1 -mr-10" />
                 <input
                   type="search"
                   autoComplete="new-search"
@@ -86,10 +86,11 @@ const Header = () => {
                   className="absolute right-4 text-4xl text-white/80 z-1 cursor-pointer"
                   title="Clear Search"
                   onClick={() => {
-                    setShowSearch(false)
-                    setSearch("")
-                    setSearchResults([])
-                  }} />
+                    setShowSearch(false);
+                    setSearch("");
+                    setSearchResults([]);
+                  }}
+                />
               </div>
               {search.length > 0 && (
                 <div className="sm:hidden absolute top-14 -left-4 right-0 z-10 overflow-y-scroll mx-auto w-full max-w-[80%] md:max-w-md max-h-96 bg-white rounded shadow-lg">
@@ -105,8 +106,12 @@ const Header = () => {
                         setShowSearch(false);
                       }}
                     >
-                      <p className="text-xs capitalize text-black">{game.name}</p>
-                      <small className="text-[0.5rem] text-gray-500 capitalize">{game.provider}</small>
+                      <p className="text-xs capitalize text-black">
+                        {game.name}
+                      </p>
+                      <small className="text-[0.5rem] text-gray-500 capitalize">
+                        {game.provider}
+                      </small>
                     </Link>
                   ))}
                 </div>
@@ -146,9 +151,10 @@ const Header = () => {
                     className="hidden sm:block absolute right-2 text-2xl text-black/50 z-1 cursor-pointer"
                     title="Clear Search"
                     onClick={() => {
-                      setSearch("")
-                      setSearchResults([])
-                    }} />
+                      setSearch("");
+                      setSearchResults([]);
+                    }}
+                  />
                 )}
               </div>
               {/* search results */}
@@ -165,8 +171,12 @@ const Header = () => {
                         setSearchResults([]);
                       }}
                     >
-                      <p className="text-xs capitalize text-black">{game.name}</p>
-                      <small className="text-[0.5rem] text-gray-500 capitalize">{game.provider}</small>
+                      <p className="text-xs capitalize text-black">
+                        {game.name}
+                      </p>
+                      <small className="text-[0.5rem] text-gray-500 capitalize">
+                        {game.provider}
+                      </small>
                     </Link>
                   ))}
                 </div>
@@ -242,10 +252,10 @@ const Header = () => {
                     {user?.credit > 1000 && user?.credit < 100000
                       ? `${(user?.credit / 1000).toFixed(1)}K`
                       : user?.credit > 100000 && user?.credit < 10000000
-                        ? `${(user?.credit / 100000).toFixed(2)}L`
-                        : user?.credit > 10000000
-                          ? `${(user?.credit / 10000000).toFixed(2)}C`
-                          : user?.credit}
+                      ? `${(user?.credit / 100000).toFixed(2)}L`
+                      : user?.credit > 10000000
+                      ? `${(user?.credit / 10000000).toFixed(2)}C`
+                      : user?.credit}
                   </span>
                 )}
               </button>
