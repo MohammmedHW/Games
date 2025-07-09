@@ -28,7 +28,7 @@ const LoginBox = () => {
 
     return () => {
       setIsVisible(false);
-    }
+    };
   }, []);
 
   // form handlers
@@ -64,17 +64,15 @@ const LoginBox = () => {
   };
 
   // open whatsapp when btn is clicked
-  const openWhatsapp = () => { };
+  const openWhatsapp = () => {};
 
   return (
     <>
-      {isVisible &&
+      {isVisible && (
         <LoaderBG showLogo={false}>
           <div className="fixed inset-0 overflow-y-auto z-10">
             <div className="flex items-center justify-center min-h-full">
-
               <div className="bg-primary shadow-lg p-8 rounded-lg w-[90vw] max-w-[500px] scrollbar overflow-auto pb-10 lg:px-15 px-4 lg:px-12">
-
                 {/* logo */}
                 <div className="">
                   <div className="pt-8 pb-6">
@@ -127,7 +125,7 @@ const LoginBox = () => {
             </div>
           </div>
         </LoaderBG>
-      }
+      )}
     </>
   );
 };

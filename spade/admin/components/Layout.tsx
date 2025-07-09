@@ -8,14 +8,15 @@ import Loader from "./Loader";
 import Menu from "./Menu";
 import SideMenu from "./SideMenu";
 import { useRouter } from "next/router";
-import { ToastContainer } from 'react-toastify';
+import { ToastContainer } from "react-toastify";
 import useUser from "../hooks/useUser";
 import LoginBox from "./LoginBox";
 import { User } from "../pages/users";
 
 export default function Layout({ children }: React.PropsWithChildren<{}>) {
   const router = useRouter();
-  const { sideMenuOpen, menuOpen, toggleMenuOpen, toggleSideMenuOpen } = useContext(MenuStore);
+  const { sideMenuOpen, menuOpen, toggleMenuOpen, toggleSideMenuOpen } =
+    useContext(MenuStore);
   const [isAdminPanel, setIsAdminPanel] = useState(false);
   const { isLoggedIn, user, logout } = useUser();
 
@@ -25,7 +26,6 @@ export default function Layout({ children }: React.PropsWithChildren<{}>) {
       router.push("/no-access");
     }
   }, [router.pathname, user]);
-
 
   const canUserAccess = (user: User) => {
     // check if pagepath is in user's access
@@ -61,9 +61,11 @@ export default function Layout({ children }: React.PropsWithChildren<{}>) {
       <div>
         <Loader />
         <div>
-
           <>
-            {(isLoggedIn && (user?.role === "admin" || user?.role === "subadmin")) ? (
+            {isLoggedIn &&
+            (user?.role === "admin" ||
+              user?.role === "subadmin" ||
+              user?.role === "agent") ? (
               <>
                 <div className="relative bg-slate-900 text-white">
                   <div>
@@ -93,8 +95,8 @@ export default function Layout({ children }: React.PropsWithChildren<{}>) {
                       sideMenuOpen
                         ? toggleSideMenuOpen
                         : menuOpen
-                          ? toggleMenuOpen
-                          : undefined
+                        ? toggleMenuOpen
+                        : undefined
                     }
                   ></div>
                 )}
@@ -104,8 +106,7 @@ export default function Layout({ children }: React.PropsWithChildren<{}>) {
               <>
                 <LoginBox />
               </>
-            )
-            }
+            )}
           </>
         </div>
         <ToastContainer

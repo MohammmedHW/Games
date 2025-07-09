@@ -1,37 +1,19 @@
 // All user related routes will be handled here
 // User routes include things like: user login, user logout, user registration, user profile, user settings, user password reset etc.
 
-// import express from "express";
-// import { generateOtp, timeDiffinMins, timeDiffinSecs } from "../../utils/index.js";
-// import { compare, encrypt } from "../../utils/crypto.js";
-// import { body, query, validationResult } from "express-validator";
-// import { generateToken, deleteToken, findUserByToken } from "../../utils/jwt.js";
-// import db from "../../db/models/index.js";
-// import { Op } from "sequelize";
-// import authorizer from "../../middleware/authorizer.js";
-// import { logger } from "../../utils/logger.js";
-// import NodeCache from "node-cache";
-// import config from "../../config/index.js";
-// import { sendTelegramMessageAdmin } from "../../utils/telegram.js";
-// import { txEvent } from "../../utils/transaction.js";
-// import axios from "axios";
-// const USER = db.USER;
-// const cachedData = new NodeCache({
-//   stdTTL: 30 * 60, // 30 min
-//   checkperiod: 30 * 60 * 0.2, // CHECK EVERY 6 min
-//   maxKeys: -1, // max number of keys in cache, -1 means unlimited
-// }); //expiry time is 30 MIN
-
-// const OTP = db.Otp;
-// const User = db.User;
-// const SITE = db.Site;
-
-// const router = express.Router();
 import express from "express";
-import { generateOtp, timeDiffinMins, timeDiffinSecs } from "../../utils/index.js";
+import {
+  generateOtp,
+  timeDiffinMins,
+  timeDiffinSecs,
+} from "../../utils/index.js";
 import { compare, encrypt } from "../../utils/crypto.js";
 import { body, query, validationResult } from "express-validator";
-import { generateToken, deleteToken, findUserByToken } from "../../utils/jwt.js";
+import {
+  generateToken,
+  deleteToken,
+  findUserByToken,
+} from "../../utils/jwt.js";
 import db from "../../db/models/index.js";
 import { Op } from "sequelize";
 import authorizer from "../../middleware/authorizer.js";
@@ -45,7 +27,7 @@ import axios from "axios";
 const USER = db.User;
 const OTP = db.Otp;
 const SITE = db.Site;
-const User = db.User; 
+const User = db.User;
 
 const cachedData = new NodeCache({
   stdTTL: 30 * 60,
@@ -55,62 +37,59 @@ const cachedData = new NodeCache({
 
 const router = express.Router();
 
-router.post('/agents/login', [
-  body('username').trim().notEmpty(),
-  body('password').isLength({ min: 8 }),
-], async (req, res) => {
-  try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
-    const { username, password } = req.body;
-
-    const user = await User.scope('withSecret').findOne({
-      where: {
-        username,
-        role: 'agent'  
+router.post(
+  "/agents/login",
+  [body("username").trim().notEmpty(), body("password").isLength({ min: 8 })],
+  async (req, res) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
       }
-    });
 
-    if (!user) {
-      console.log('Agent not found:', username);
-      return res.status(401).json({ message: 'Invalid credentials' });
-    }
+      const { username, password } = req.body;
 
-    const isValid = await compare(password, user.password);
-    if (!isValid) {
-      console.log('Invalid password for agent:', username);
-      return res.status(401).json({ message: 'Invalid credentials' });
-    }
+      const user = await User.scope("withSecret").findOne({
+        where: {
+          username,
+          role: "agent",
+        },
+      });
 
-    const token = await generateToken(user);
-
-    res.status(200).json({
-      token,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
+      if (!user) {
+        console.log("Agent not found:", username);
+        return res.status(401).json({ message: "Invalid credentials" });
       }
-    });
-  } catch (err) {
-    console.error("Agent login error:", err);
-    res.status(500).json({ message: "Internal server error" });
+
+      const isValid = await compare(password, user.password);
+      if (!isValid) {
+        console.log("Invalid password for agent:", username);
+        return res.status(401).json({ message: "Invalid credentials" });
+      }
+
+      const token = await generateToken(user);
+
+      res.status(200).json({
+        token,
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+        },
+      });
+    } catch (err) {
+      console.error("Agent login error:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
   }
-});
-
+);
 
 ////////////
 // Add new admin login route
 router.post(
-  '/admin/login',
-  [
-    body('username').trim().notEmpty(),
-    body('password').isLength({ min: 8 })
-  ],
+  "/admin/login",
+  [body("username").trim().notEmpty(), body("password").isLength({ min: 8 })],
   async (req, res) => {
     try {
       const errors = validationResult(req);
@@ -121,48 +100,45 @@ router.post(
       const { username, password } = req.body;
 
       // Find admin user
-      const user = await User.scope('withSecret').findOne({
-        where: { 
+      const user = await User.scope("withSecret").findOne({
+        where: {
           username,
-          role: ['admin', 'subadmin'] 
-        }
+          role: ["admin", "subadmin", "agent"],
+        },
       });
 
       if (!user) {
-        console.log('Admin user not found:', username);
-        return res.status(401).json({ message: 'Invalid credentials' });
+        console.log("Admin user not found:", username);
+        return res.status(401).json({ message: "Invalid credentials" });
       }
 
       // Verify password
       const isValid = await compare(password, user.password);
       if (!isValid) {
-        console.log('Invalid password for user:', username);
-        return res.status(401).json({ message: 'Invalid credentials' });
+        console.log("Invalid password for user:", username);
+        return res.status(401).json({ message: "Invalid credentials" });
       }
 
       // Generate token
       //const token = generateToken(user); // returns jwt.sign(...)
       const token = await generateToken(user);
 
-res.status(200).json({
-  token: token,
-  user: {
-    id: user.id,
-    phone: user.phone,
-    name: user.name,
-    email: user.email,
-    role: user.role,
-  },
-});
-
-
+      res.status(200).json({
+        token: token,
+        user: {
+          id: user.id,
+          phone: user.phone,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+        },
+      });
     } catch (error) {
-      console.error('Login error:', error);
-      return res.status(500).json({ message: 'Internal server error' });
+      console.error("Login error:", error);
+      return res.status(500).json({ message: "Internal server error" });
     }
   }
 );
-
 
 // -------
 
@@ -218,7 +194,6 @@ router
   //       }
   //     }
   //     const otp = generateOtp();
-     
 
   //     // console.log("otp", otp);
 
@@ -251,7 +226,11 @@ router
   .post(
     "/signup",
     body("password").isString().trim().escape().isLength({ min: 8, max: 40 }), // escaping and trimming password for security reasons
-    body("phoneNumber").trim().escape().isLength({ min: 10, max: 10 }).isNumeric(), // escaping and trimming phoneNumber for security reasons
+    body("phoneNumber")
+      .trim()
+      .escape()
+      .isLength({ min: 10, max: 10 })
+      .isNumeric(), // escaping and trimming phoneNumber for security reasons
     body("confirmPassword")
       .isString()
       .trim()
@@ -263,8 +242,13 @@ router
         return true;
       }),
     // body("otp").isString().isLength({ min: 4, max: 6 }),
-    body("name").optional().isString().trim().escape().isLength({ min: 3, max: 120 }),// optional name
-    
+    body("name")
+      .optional()
+      .isString()
+      .trim()
+      .escape()
+      .isLength({ min: 3, max: 120 }), // optional name
+
     async function (req, res) {
       console.log("Request body:", req.body);
       try {
@@ -273,7 +257,7 @@ router
           console.log(errors.array());
           return res.status(400).json({ errors: errors.array() });
         }
-        const { phoneNumber, password, name = "" } = req.body;  //otp removed
+        const { phoneNumber, password, name = "" } = req.body; //otp removed
 
         const ip =
           req.headers["x-forwarded-for"]?.split(",")[0] ||
@@ -289,7 +273,10 @@ router
         const user = await USER.findOne({
           where: { phone: phoneNumber },
         });
-        if (user) return res.status(400).send("User with this phone number already exists");
+        if (user)
+          return res
+            .status(400)
+            .send("User with this phone number already exists");
 
         // check if otp exists for this phone number where createdAt is less than 5 minutes. otp send time is 60 seconds but we are giving 5 mins to user to enter otp
         // const lastOTP = await OTP.findOne({
@@ -342,7 +329,7 @@ router
           transactions: userCount === 0 ? true : false,
           reports: userCount === 0 ? true : false,
           offers: userCount === 0 ? true : false,
-        }
+        };
 
         // from site settings, get where key is "signup_bonus" and get value
         const signupBonus = await SITE.findOne({
@@ -378,97 +365,97 @@ router
         }
         return res.status(200).send(true);
       } catch (error) {
-        console.log("SIGNUP ERROR >>>", error);  // Add this
+        console.log("SIGNUP ERROR >>>", error); // Add this
         logger.error(`users.signup.post: ${error}`);
         res.status(400).send("Request Failed");
       }
     }
   )
- .post(
-  "/login",
-  body("password").isString().trim().escape().isLength({ min: 8, max: 40 }),
-  body("phoneNumber").trim().escape().isMobilePhone(),
-  async function (req, res) {
-    try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        console.log("Validation errors:", errors.array());
-        return res.status(400).json({ errors: errors.array() });
+  .post(
+    "/login",
+    body("password").isString().trim().escape().isLength({ min: 8, max: 40 }),
+    body("phoneNumber").trim().escape().isMobilePhone(),
+    async function (req, res) {
+      try {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+          console.log("Validation errors:", errors.array());
+          return res.status(400).json({ errors: errors.array() });
+        }
+
+        const { phoneNumber, password } = req.body;
+        console.log("Login attempt:", { phoneNumber });
+
+        const ip =
+          req.headers["x-forwarded-for"]?.split(",")[0] ||
+          req.headers["x-forwarded-for"] ||
+          req.ip;
+
+        const key = `loginError${ip}`;
+        const errorCount = cachedData.get(key);
+        if (errorCount && errorCount >= 8) {
+          return res.status(400).send("Try again after 30 minutes");
+        }
+
+        const user = await USER.findOne({
+          where: {
+            phone: phoneNumber,
+            // //// role: { [Op.or]: [null, ""] },
+            [Op.or]: [
+              { is_banned: false },
+              { is_banned: null },
+              { is_deleted: false },
+              { is_deleted: null },
+            ],
+          },
+          attributes: { include: ["password"] },
+        });
+
+        if (!user) {
+          console.log("User not found or banned/deleted");
+          return res.status(400).send("Username or password incorrect");
+        }
+
+        console.log("User found:", user.phone);
+        console.log("Password entered:", password);
+        console.log("Password from DB:", user.password);
+
+        const verification = await compare(password, user.password);
+        console.log("Password match:", verification);
+
+        if (!verification) {
+          if (!errorCount) cachedData.set(key, 1);
+          else cachedData.set(key, errorCount + 1);
+          return res.status(400).send("Username or password incorrect");
+        }
+
+        await user.update({ is_active: true, last_login: new Date(), ip });
+
+        const token = await generateToken(user);
+
+        res.cookie("token", token, {
+          maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+          httpOnly: true,
+          secure: config.NODE_ENV === "production" ? true : false,
+        });
+
+        return res.status(200).send({
+          token: token,
+          user: {
+            id: user.id,
+            phone: user.phone,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+          },
+        });
+      } catch (error) {
+        console.error("users.login.post ERROR:", error.stack || error);
+        logger.error(`users.login.post: ${error.stack || error}`);
+        return res.status(500).send("Internal Server Error");
       }
-
-      const { phoneNumber, password } = req.body;
-      console.log("Login attempt:", { phoneNumber });
-
-      const ip =
-        req.headers["x-forwarded-for"]?.split(",")[0] ||
-        req.headers["x-forwarded-for"] ||
-        req.ip;
-
-      const key = `loginError${ip}`;
-      const errorCount = cachedData.get(key);
-      if (errorCount && errorCount >= 8) {
-        return res.status(400).send("Try again after 30 minutes");
-      }
-
-      const user = await USER.findOne({
-        where: {
-          phone: phoneNumber,
-        // //// role: { [Op.or]: [null, ""] },
-          [Op.or]: [
-            { is_banned: false },
-            { is_banned: null },
-            { is_deleted: false },
-            { is_deleted: null },
-          ],
-        },
-        attributes: { include: ["password"] },
-      });
-
-      if (!user) {
-        console.log("User not found or banned/deleted");
-        return res.status(400).send("Username or password incorrect");
-      }
-
-      console.log("User found:", user.phone);
-      console.log("Password entered:", password);
-console.log("Password from DB:", user.password);
-
-      const verification = await compare(password, user.password);
-      console.log("Password match:", verification);
-
-      if (!verification) {
-        if (!errorCount) cachedData.set(key, 1);
-        else cachedData.set(key, errorCount + 1);
-        return res.status(400).send("Username or password incorrect");
-      }
-
-      await user.update({ is_active: true, last_login: new Date(), ip });
-
-      const token = await generateToken(user);
-
-      res.cookie("token", token, {
-        maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
-        httpOnly: true,
-        secure: config.NODE_ENV === "production" ? true : false,
-      });
-
-      return res.status(200).send({
-        token: token,
-        user: {
-          id: user.id,
-          phone: user.phone,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-        },
-      });
-    } catch (error) {
-      console.error("users.login.post ERROR:", error.stack || error);
-      logger.error(`users.login.post: ${error.stack || error}`);
-      return res.status(500).send("Internal Server Error");
     }
-  }
-)
+  )
   .get("/logout", authorizer, async function (req, res) {
     try {
       const user = req.user;
@@ -523,7 +510,6 @@ console.log("Password from DB:", user.password);
           },
         });
         if (!user || user.is_banned) {
-         
           return res.status(400).send("User not found");
         }
         const lastOTP = await OTP.findOne({
